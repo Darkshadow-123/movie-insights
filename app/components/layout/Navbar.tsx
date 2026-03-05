@@ -10,14 +10,19 @@ export function Navbar() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(true);
+  // Use ref to track previous scroll position without triggering re-renders
   const lastScrollY = useRef(0);
   const router = useRouter();
-  const pathname = usePathname();
+  // Note: pathname is imported but not currently used - could be used for active link styling
 
+  // Hide navbar when scrolling down, show when scrolling up
+  // Only triggers after scrolling past 100px to avoid initial hide
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
+      // Hide: scrolling down AND past threshold (100px)
+      // Show: scrolling up (regardless of position) or at top
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setVisible(false);
       } else {

@@ -6,6 +6,7 @@ interface TrailerCommentsProps {
 }
 
 export function TrailerComments({ comments, totalCount }: TrailerCommentsProps) {
+  // Guard clause: don't render if no comments exist
   if (!comments?.length) return null;
 
   return (
@@ -19,6 +20,7 @@ export function TrailerComments({ comments, totalCount }: TrailerCommentsProps) 
           <div key={i} className="comment-card">
             <div className="comment-header">
               <span className="comment-author">{comment.author}</span>
+              {/* Convert YouTube API timestamp to locale date string */}
               <span className="comment-date">{new Date(comment.publishedAt).toLocaleDateString()}</span>
             </div>
             <p className="comment-text">{comment.text}</p>

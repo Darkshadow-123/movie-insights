@@ -7,6 +7,8 @@ export const config = {
     apiKey: process.env.YOUTUBE_API_KEY || '',
     baseUrl: 'https://www.googleapis.com/youtube/v3',
     searchEndpoint: '/search',
+    // YouTube video categories: 1 = Film & Animation, 24 = Movies
+    // Using 24 to specifically search for movie trailers
     videoCategoryId: 1,
   },
   rapidApi: {

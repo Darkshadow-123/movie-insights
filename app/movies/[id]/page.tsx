@@ -19,6 +19,7 @@ export default function MoviePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Next.js 15+ requires awaiting params - this resolves the Promise to get the actual route parameters
   const resolvedParams = use(params);
   const [movie, setMovie] = useState<MovieData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,9 +52,15 @@ export default function MoviePage({
     }
   }, [resolvedParams.id]);
 
+  // Converts numeric rating (0-10) to 5-star display
+  // IMDb rating is 0-10, but we display 5 stars
+  // Each full star represents 2 IMDb points (10/5 = 2)
   const renderStars = (rating: number) => {
+    // Calculate how many full stars (each worth 2 IMDb rating points)
     const full = Math.floor(rating / 2);
+    // Check if there's a half star (remaining rating >= 1 means rating is 1 or more after full stars)
     const half = rating % 2 >= 1;
+    // Remaining empty stars
     const empty = 5 - full - (half ? 1 : 0);
     return (
       <>
@@ -91,6 +98,7 @@ export default function MoviePage({
     );
   }
 
+  // Split genre string by comma, trim whitespace, and limit to 4 genres for display
   const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
 
   return (

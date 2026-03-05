@@ -5,15 +5,19 @@ interface CastGridProps {
 }
 
 export function CastGrid({ cast }: CastGridProps) {
+  // Guard clause: handle undefined or empty cast array
   if (!cast || cast.length === 0) return null;
 
   return (
     <div className="cast-grid-updated">
+      {/* Limit display to first 12 cast members for cleaner UI */}
       {cast.slice(0, 12).map((actor: CastMember, i: number) => (
         <div key={i} className="cast-card-updated">
           {actor.image ? (
+            // Use cast member's photo if available
             <img src={actor.image} alt={actor.name} className="cast-avatar-updated" />
           ) : (
+            // Fallback: show first letter of name in a circle placeholder
             <div className="cast-avatar-placeholder" style={{
               width: '80px',
               height: '80px',
@@ -31,6 +35,7 @@ export function CastGrid({ cast }: CastGridProps) {
             </div>
           )}
           <div className="cast-name-updated">{actor.name}</div>
+          {/* Only show character name if it exists (not all cast have character info) */}
           {actor.character && <div className="cast-character-updated">{actor.character}</div>}
         </div>
       ))}
