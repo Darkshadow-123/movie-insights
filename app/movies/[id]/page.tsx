@@ -125,13 +125,12 @@ export default function MoviePage({
                 <div className="poster-placeholder">Movie</div>
               )}
             </div>
-
             <div className="movie-trailer">
+              {movie.trailerId && <TrailerPlayer trailerId={movie.trailerId} />}
               <YouTubeStatusBanner
                 status={movie.youtubeStatus}
                 message={movie.youtubeMessage}
-              />
-              {movie.trailerId && <TrailerPlayer trailerId={movie.trailerId} />}
+              />              
             </div>
           </div>
           <div>

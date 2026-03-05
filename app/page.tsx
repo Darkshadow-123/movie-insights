@@ -63,12 +63,6 @@ export default function Home() {
         </form>
         {error && <p className="error-message" style={{ marginTop: "16px" }}>{error}</p>}
       </div>
-
-      {loading && (
-        <div style={{ marginTop: "40px" }}>
-          <LoadingSpinner />
-        </div>
-      )}
     </div>
   );
 }
