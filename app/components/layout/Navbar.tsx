@@ -66,13 +66,13 @@ export function Navbar() {
           <input
             type="text"
             className={styles.searchInput}
-            placeholder="Enter IMDb ID..."
+            placeholder="Enter IMDb ID (e.g., tt0133093)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             disabled={loading}
           />
           <button type="submit" className={styles.searchBtn} disabled={loading}>
-            {loading ? "..." : "Search"}
+            {loading ? "Searching..." : "Search"}
           </button>
         </form>
       </div>

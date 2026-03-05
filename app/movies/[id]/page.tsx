@@ -10,6 +10,7 @@ import {
   TrailerPlayer,
   TrailerComments,
   CastGrid,
+  YouTubeStatusBanner,
 } from "@/app/components";
 import { Navbar } from "@/app/components/layout";
 
@@ -200,47 +201,5 @@ export default function MoviePage({
         </div>
       </section>
     </>
-  );
-}
-
-function YouTubeStatusBanner({
-  status,
-  message,
-}: {
-  status?: string;
-  message?: string;
-}) {
-  if (!status || status === "success") return null;
-
-  const config: Record<string, { color: string; text: string }> =
-    {
-      no_api_key: {
-        color: "gray",
-        text: "YouTube API key not configured",
-      },
-      trailer_not_found: {
-        color: "yellow",
-        text: "Trailer not found",
-      },
-      comments_disabled: {
-        color: "gray",
-        text: "Comments are disabled",
-      },
-      quota_exceeded: {
-        color: "red",
-        text: "YouTube quota exceeded",
-      },
-      error: {
-        color: "red",
-        text: message || "An error occurred",
-      },
-    };
-
-  const c = config[status] || config.error;
-
-  return (
-    <div className={`youtube-status youtube-status-${c.color}`}>
-      <span className="youtube-status-text">{c.text}</span>
-    </div>
   );
 }
