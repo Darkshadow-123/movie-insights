@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { useParams } from "next/navigation";
-import { MovieData, CastMember } from "@/app/types";
+import { MovieData } from "@/app/types";
 import {
   LoadingSpinner,
   ErrorDisplay,
@@ -11,6 +10,7 @@ import {
   TrailerComments,
   CastGrid,
   YouTubeStatusBanner,
+  Tabs,
 } from "@/app/components";
 import { Navbar } from "@/app/components/layout";
 
@@ -24,7 +24,6 @@ export default function MoviePage({
   const [movie, setMovie] = useState<MovieData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("reviews");
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -158,54 +157,47 @@ export default function MoviePage({
             </p>
           </div>
 
-          {/* Sub Navbar with Tabs */}
-          <div className="sub-navbar">
-            <button
-              className={`tab-button ${
-                activeTab === "reviews" ? "active" : ""
-              }`}
-              onClick={() => setActiveTab("reviews")}
-            >
-              Reviews
-            </button>
-            <button
-              className={`tab-button ${activeTab === "cast" ? "active" : ""}`}
-              onClick={() => setActiveTab("cast")}
-            >
-              Cast
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === "reviews" && (
-            <div className="tab-content-reviews">
-              {movie.sentiment && (
-                <SentimentCard
-                  sentiment={movie.sentiment}
-                  isFallback={(movie as any).sentimentStatus === "fallback"}
-                />
-              )}
-              {movie.trailerComments &&
-                movie.trailerComments.comments.length > 0 && (
-                  <TrailerComments
-                    comments={movie.trailerComments.comments}
-                    totalCount={movie.trailerComments.totalCount}
-                  />
-                )}
-            </div>
-          )}
-
-          {activeTab === "cast" && (
-            <div className="tab-content-cast">
-              {movie.castAndCrew && movie.castAndCrew.cast?.length > 0 ? (
-                <CastGrid cast={movie.castAndCrew.cast} />
-              ) : (
-                <p className="no-cast" style={{ color: "var(--text-muted)" }}>
-                  No cast information available
-                </p>
-              )}
-            </div>
-          )}
+          {/* Tabbed Content */}
+          <Tabs
+            tabs={[
+              {
+                id: "reviews",
+                label: "Reviews",
+                content: (
+                  <div className="tab-content-reviews">
+                    {movie.sentiment && (
+                      <SentimentCard
+                        sentiment={movie.sentiment}
+                        isFallback={(movie as any).sentimentStatus === "fallback"}
+                      />
+                    )}
+                    {movie.trailerComments &&
+                      movie.trailerComments.comments.length > 0 && (
+                        <TrailerComments
+                          comments={movie.trailerComments.comments}
+                          totalCount={movie.trailerComments.totalCount}
+                        />
+                      )}
+                  </div>
+                ),
+              },
+              {
+                id: "cast",
+                label: "Cast",
+                content: (
+                  <div className="tab-content-cast">
+                    {movie.castAndCrew && movie.castAndCrew.cast?.length > 0 ? (
+                      <CastGrid cast={movie.castAndCrew.cast} />
+                    ) : (
+                      <p className="no-cast" style={{ color: "var(--text-muted)" }}>
+                        No cast information available
+                      </p>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
         </div>
       </section>
     </>
