@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { omdbClient, youtubeClient, imdb8Client } from '@/app/lib';
-import { sentimentService } from '@/app/services';
+import { getMovieById, getTrailerWithComments, getCastAndCrew } from '@/app/lib';
+import { analyzeCombined, getFallbackSentiment } from '@/app/services/sentimentService';
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +21,7 @@ export async function GET(
 
   try {
     // Step 1: Fetch basic movie data from OMDB (title, plot, rating, poster, etc.)
-    const movieData = await omdbClient.getMovieById(imdbId);
+    const movieData = await getMovieById(imdbId);
     if (movieData.Response === 'False') {
       return NextResponse.json({ error: movieData.Error || 'Movie not found' }, { status: 404 });
     }
@@ -29,8 +29,8 @@ export async function GET(
     // Step 2: Fetch YouTube trailer and comments in parallel with cast/crew data
     // Using Promise.all for parallel execution to reduce overall response time
     const [youtubeResult, castAndCrew] = await Promise.all([
-      youtubeClient.getTrailerWithComments(movieData.Title || '', movieData.Year || ''),
-      imdb8Client.getCastAndCrew(imdbId)
+      getTrailerWithComments(movieData.Title || '', movieData.Year || ''),
+      getCastAndCrew(imdbId)
     ]);
 
     // Step 3: Analyze sentiment using AI
@@ -38,7 +38,7 @@ export async function GET(
     // Falls back to basic sentiment if AI analysis fails
     let sentiment, sentimentStatus = 'success';
     try {
-      sentiment = await sentimentService.analyzeCombined(
+      sentiment = await analyzeCombined(
         movieData.Title || '', 
         movieData.Plot || '', 
         movieData.imdbRating || '0', 
@@ -46,7 +46,7 @@ export async function GET(
       );
     } catch (err) {
       // Fallback: generate sentiment from rating and plot keywords if AI fails
-      sentiment = sentimentService.getFallbackSentiment(movieData.imdbRating || '0', movieData.Plot || '');
+      sentiment = getFallbackSentiment(movieData.imdbRating || '0', movieData.Plot || '');
       sentimentStatus = 'fallback';
     }
 

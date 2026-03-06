@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { omdbClient } from '@/app/lib';
+import { getMovieById } from '@/app/lib';
 
 export async function GET(request: NextRequest) {
   // Extract search query from URL parameters
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Fetch movie data from OMDB API using IMDb ID
-    const movieData = await omdbClient.getMovieById(searchQuery);
+    const movieData = await getMovieById(searchQuery);
     
     // OMDB returns Response: "False" when movie is not found
     if (movieData.Response === 'False') {

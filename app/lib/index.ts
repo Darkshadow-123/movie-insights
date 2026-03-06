@@ -1,4 +1,4 @@
 export { config } from './config';
-export { omdbClient, OmdbClient } from './omdbClient';
-export { youtubeClient, YouTubeClient } from './youtubeClient';
-export { imdb8Client, Imdb8Client } from './imdb8Client';
+export { getMovieById } from './omdbClient';
+export { getTrailerWithComments } from './youtubeClient';
+export { getCastAndCrew } from './imdb8Client';

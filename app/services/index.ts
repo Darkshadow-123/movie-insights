@@ -1,1 +1,1 @@
-export { sentimentService, SentimentService } from './sentimentService';
+export { analyzeCombined, getFallbackSentiment } from './sentimentService';
