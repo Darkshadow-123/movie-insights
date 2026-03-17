@@ -12,6 +12,16 @@ export async function GET(
   console.error('OMDB API Key available:', !!apiKey);
   console.error('Request URL:', request.url);
   
+  if (!apiKey) {
+    return NextResponse.json({ 
+      error: 'OMDB_API_KEY not configured',
+      debug: {
+        envOMDB: !!process.env.OMDB_API_KEY,
+        configOMDB: !!config.omdb.apiKey
+      }
+    }, { status: 401 });
+  }
+  
   const { id: imdbId } = await params;
 
   // Validate IMDb ID is provided
