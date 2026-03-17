@@ -7,10 +7,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('OMDB_API_KEY:', config.omdb.apiKey ? 'set' : 'EMPTY');
-  console.log('GEMINI_API_KEY:', config.gemini.apiKey ? 'set' : 'EMPTY');
-  console.log('YOUTUBE_API_KEY:', config.youtube.apiKey ? 'set' : 'EMPTY');
-  console.log('RAPIDAPI_KEY:', config.rapidApi.imdb8.apiKey ? 'set' : 'EMPTY');
+  const apiKey = config.omdb.apiKey;
+  console.error('=== API ROUTE CALLED ===');
+  console.error('OMDB API Key available:', !!apiKey);
+  console.error('Request URL:', request.url);
   
   const { id: imdbId } = await params;
 

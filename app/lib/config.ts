@@ -22,11 +22,6 @@ export const config = {
   },
 } as const;
 
-console.log('[CONFIG] OMDB_API_KEY:', process.env.OMDB_API_KEY ? 'present' : 'MISSING');
-console.log('[CONFIG] GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'present' : 'MISSING');
-console.log('[CONFIG] YOUTUBE_API_KEY:', process.env.YOUTUBE_API_KEY ? 'present' : 'MISSING');
-console.log('[CONFIG] RAPIDAPI_KEY:', process.env.RAPIDAPI_KEY ? 'present' : 'MISSING');
-
 export const apiKeys = {
   omdb: process.env.OMDB_API_KEY,
   youtube: process.env.YOUTUBE_API_KEY,
