@@ -11,7 +11,7 @@ import {
 import { Navbar } from "@/app/components/layout";
 
 async function getMovie(id: string): Promise<MovieData> {
-  const baseUrl = process.env.NODE_ENV === "production" ? "" : process.env.NEXT_PUBLIC_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/movies/${id}`, { next:{revalidate:86400} });
 
   if (!res.ok) {
