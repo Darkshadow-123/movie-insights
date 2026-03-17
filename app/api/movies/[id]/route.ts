@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMovieById, getTrailerWithComments, getCastAndCrew } from '@/app/lib';
 import { analyzeCombined, getFallbackSentiment } from '@/app/services/sentimentService';
+import { config } from '@/app/lib/config';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Next.js 15+ requires awaiting params to get the actual route parameters
+  console.log('OMDB_API_KEY:', config.omdb.apiKey ? 'set' : 'EMPTY');
+  console.log('GEMINI_API_KEY:', config.gemini.apiKey ? 'set' : 'EMPTY');
+  console.log('YOUTUBE_API_KEY:', config.youtube.apiKey ? 'set' : 'EMPTY');
+  console.log('RAPIDAPI_KEY:', config.rapidApi.imdb8.apiKey ? 'set' : 'EMPTY');
+  
   const { id: imdbId } = await params;
 
   // Validate IMDb ID is provided
