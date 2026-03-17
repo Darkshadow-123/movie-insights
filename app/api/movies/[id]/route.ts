@@ -8,18 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const apiKey = config.omdb.apiKey;
-  console.error('=== API ROUTE CALLED ===');
-  console.error('OMDB API Key available:', !!apiKey);
-  console.error('Request URL:', request.url);
   
   if (!apiKey) {
-    return NextResponse.json({ 
-      error: 'OMDB_API_KEY not configured',
-      debug: {
-        envOMDB: !!process.env.OMDB_API_KEY,
-        configOMDB: !!config.omdb.apiKey
-      }
-    }, { status: 401 });
+    return NextResponse.json({ error: 'OMDB_API_KEY not configured' }, { status: 500 });
   }
   
   const { id: imdbId } = await params;
