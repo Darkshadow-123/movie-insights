@@ -59,6 +59,7 @@ export interface OmdbApiResponse {
   imdbRating: string;
   imdbVotes: string;
   imdbID: string;
+  Language?: string;
   Response: string;
   Error?: string;
 }

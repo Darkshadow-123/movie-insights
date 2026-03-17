@@ -15,7 +15,7 @@ export function CastGrid({ cast }: CastGridProps) {
         <div key={i} className="cast-card-updated">
           {actor.image ? (
             // Use cast member's photo if available
-            <img src={actor.image} alt={actor.name} className="cast-avatar-updated" />
+            <img src={actor.image} alt={actor.name} className="cast-avatar-updated" loading="lazy" />
           ) : (
             // Fallback: show first letter of name in a circle placeholder
             <div className="cast-avatar-placeholder" style={{

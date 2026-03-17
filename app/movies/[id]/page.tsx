@@ -1,9 +1,5 @@
-"use client";
-
-import { useState, useEffect, use } from "react";
 import { MovieData } from "@/app/types";
 import {
-  LoadingSpinner,
   ErrorDisplay,
   SentimentCard,
   TrailerPlayer,
@@ -14,46 +10,48 @@ import {
 } from "@/app/components";
 import { Navbar } from "@/app/components/layout";
 
-export default function MoviePage({
+async function getMovie(id: string): Promise<MovieData> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : "";
+  const res = await fetch(`${baseUrl}/api/movies/${id}`, { next:{revalidate:86400} });
+
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error("Movie not found");
+    }
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to fetch movie");
+  }
+
+  return res.json();
+}
+
+export default async function MoviePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // Next.js 15+ requires awaiting params - this resolves the Promise to get the actual route parameters
-  const resolvedParams = use(params);
-  const [movie, setMovie] = useState<MovieData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const resolvedParams = await params;
 
-  useEffect(() => {
-    const fetchMovie = async () => {
-      setLoading(true);
-      setError("");
+  let movie: MovieData;
+  try {
+    movie = await getMovie(resolvedParams.id);
+  } catch (err) {
+    console.error("Error", err);
 
-      try {
-        const res = await fetch(`/api/movies/${resolvedParams.id}`);
-        const data = await res.json();
+    return(
+      <>
+        <Navbar />
+        <div
+          style={{ paddingTop: "120px", maxWidth: "500px", margin: "0 auto" }}
+        >
+          <ErrorDisplay
+            message={ "An error occurred"}
+          />
+        </div>
+      </>
+    );
+  }
 
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to fetch movie");
-        }
-
-        setMovie(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (resolvedParams.id) {
-      fetchMovie();
-    }
-  }, [resolvedParams.id]);
-
-  // Converts numeric rating (0-10) to 5-star display
-  // IMDb rating is 0-10, but we display 5 stars
-  // Each full star represents 2 IMDb points (10/5 = 2)
   const renderStars = (rating: number) => {
     // Calculate how many full stars (each worth 2 IMDb rating points)
     const full = Math.floor(rating / 2);
@@ -69,33 +67,6 @@ export default function MoviePage({
       </>
     );
   };
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div style={{ paddingTop: "120px", minHeight: "100vh" }}>
-          <LoadingSpinner />
-        </div>
-      </>
-    );
-  }
-
-  if (error || !movie) {
-    return (
-      <>
-        <Navbar />
-        <div
-          style={{ paddingTop: "120px", maxWidth: "500px", margin: "0 auto" }}
-        >
-          <ErrorDisplay
-            message={error || "Movie not found"}
-            onRetry={() => window.location.reload()}
-          />
-        </div>
-      </>
-    );
-  }
 
   // Split genre string by comma, trim whitespace, and limit to 4 genres for display
   const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];

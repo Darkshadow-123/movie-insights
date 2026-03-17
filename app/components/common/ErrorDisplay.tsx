@@ -1,15 +1,15 @@
+"use client"
 interface ErrorDisplayProps {
   message: string;
-  onRetry: () => void;
 }
 
-export function ErrorDisplay({ message, onRetry }: ErrorDisplayProps) {
+export function ErrorDisplay({ message }: ErrorDisplayProps) {
   return (
     <div className="error-card">
       <div className="error-icon">🎬</div>
       <h2 className="error-title">Oops! Something went wrong</h2>
       <p className="error-message">{message}</p>
-      <button className="retry-btn" onClick={onRetry}>Try Again</button>
+      <button className="retry-btn" onClick={() => window.location.reload()}>Try Again</button>
     </div>
   );
 }
