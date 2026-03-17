@@ -64,6 +64,7 @@ export async function GET(
       castAndCrew: castAndCrew.error ? { cast: [], directors: [], writers: [] } : castAndCrew
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch movie data' }, { status: 500 });
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to fetch movie data' }, { status: 500 });
   }
 }

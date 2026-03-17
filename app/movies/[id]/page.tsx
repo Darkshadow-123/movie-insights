@@ -20,7 +20,7 @@ async function getMovie(id: string): Promise<MovieData> {
       throw new Error("Movie not found");
     }
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || "Failed to fetch movie");
+    throw new Error(data.error || `HTTP ${res.status}: Failed to fetch movie`);
   }
 
   return res.json();
