@@ -13,7 +13,11 @@ import { Navbar } from "@/app/components/layout";
 async function getMovie(id: string): Promise<MovieData> {
   const vercelUrl = process.env.VERCEL_URL;
   const baseUrl = vercelUrl ? `https://${vercelUrl}` : (process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000");
-  const res = await fetch(`${baseUrl}/api/movies/${id}`, { next:{revalidate:86400} });
+  const url = `${baseUrl}/api/movies/${id}`;
+  console.log('Fetching URL:', url);
+  console.log('VERCEL_URL:', vercelUrl);
+  const res = await fetch(url, { next:{revalidate:86400} });
+  console.log('Response status:', res.status);
 
   if (!res.ok) {
     if (res.status === 404) {
