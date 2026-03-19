@@ -14,6 +14,7 @@ export interface MovieData {
   imdbID: string;
   Language?: string;
   sentiment?: SentimentData;
+  sentimentStatus?: 'success' | 'fallback';
   trailerId?: string | null;
   trailerComments?: TrailerComments | null;
   youtubeStatus?: YouTubeStatus;
@@ -59,7 +60,6 @@ export interface OmdbApiResponse {
   imdbRating: string;
   imdbVotes: string;
   imdbID: string;
-  Language?: string;
   Response: string;
   Error?: string;
 }
@@ -184,4 +184,55 @@ export interface YouTubeResult {
   comments: TrailerComments;
   status: YouTubeStatus;
   statusMessage?: string;
+}
+
+export interface SearchActionState {
+  error?: string;
+}
+
+export interface RapidApiCharacter {
+  name?: string;
+}
+
+export interface RapidApiName {
+  id?: string;
+  nameText?: {
+    text?: string;
+  };
+  primaryImage?: {
+    url?: string;
+    height?: number;
+    width?: number;
+  };
+}
+
+export interface RapidApiCredit {
+  __typename?: string;
+  name?: RapidApiName;
+  characters?: RapidApiCharacter[];
+}
+
+export interface RapidApiCreditGroup {
+  credits?: RapidApiCredit[];
+}
+
+export interface RapidApiCastEdge {
+  node?: {
+    __typename?: string;
+    name?: RapidApiName;
+    characters?: RapidApiCharacter[];
+  };
+}
+
+export interface RapidApiTitle {
+  principalCredits?: RapidApiCreditGroup[];
+  credits?: {
+    edges?: RapidApiCastEdge[];
+  };
+}
+
+export interface RapidApiResponse {
+  data?: {
+    title?: RapidApiTitle;
+  };
 }

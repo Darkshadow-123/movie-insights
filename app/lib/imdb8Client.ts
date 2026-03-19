@@ -1,10 +1,10 @@
 import { config } from './config';
-import { CastData, CastMember } from '../types';
+import { CastData, CastMember, RapidApiTitle, RapidApiCharacter } from '../types';
 
 // Maximum number of cast members to return
 const MAX_CAST_MEMBERS = 12;
 
-function extractCast(title: any): CastMember[] {
+function extractCast(title: RapidApiTitle): CastMember[] {
   const cast: CastMember[] = [];
   const seenIds = new Set<string>();
   
@@ -22,7 +22,7 @@ function extractCast(title: any): CastMember[] {
       if (personId && seenIds.has(personId)) continue;
       if (personId) seenIds.add(personId);
 
-      const characters = person.characters?.map((c: any) => c?.name).filter(Boolean) || [];
+      const characters = person.characters?.map((c: RapidApiCharacter) => c?.name).filter(Boolean) || [];
 
       cast.push({
         id: personId,
@@ -44,7 +44,7 @@ function extractCast(title: any): CastMember[] {
     if (personId && seenIds.has(personId)) continue;
     if (personId) seenIds.add(personId);
 
-    const characters = node.characters?.map((c: any) => c?.name).filter(Boolean) || [];
+    const characters = node.characters?.map((c: RapidApiCharacter) => c?.name).filter(Boolean) || [];
 
     cast.push({
       id: personId,
