@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { CastMember } from '@/app/types';
 
 interface CastGridProps {
@@ -10,30 +11,23 @@ export function CastGrid({ cast }: CastGridProps) {
 
   return (
     <div className="cast-grid-updated">
-      {/* Limit display to first 12 cast members for cleaner UI */}
-      {cast.slice(0, 12).map((actor: CastMember, i: number) => (
-        <div key={i} className="cast-card-updated">
-          {actor.image ? (
-            // Use cast member's photo if available
-            <img src={actor.image} alt={actor.name} className="cast-avatar-updated" loading="lazy" />
-          ) : (
-            // Fallback: show first letter of name in a circle placeholder
-            <div className="cast-avatar-placeholder" style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              margin: '0 auto 14px',
-              background: 'var(--bg-elevated)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px',
-              color: 'var(--text-muted)',
-              border: '2px solid var(--glass-border)'
-            }}>
-              {actor.name.charAt(0)}
-            </div>
-          )}
+      {cast.slice(0, 12).map((actor: CastMember) => (
+        <div key={actor.id || actor.name} className="cast-card-updated">
+          <div className="cast-avatar-wrapper">
+            {actor.image && actor.image.startsWith("http") ? (
+            <Image 
+              src={actor.image} 
+              alt={actor.name} 
+              width={80}
+              height={80}
+              className="cast-avatar-updated"
+            />
+            ) : (
+              <div className="cast-avatar-placeholder">
+                {actor.name.charAt(0)}
+              </div>
+            )}
+          </div>
           <div className="cast-name-updated">{actor.name}</div>
           {/* Only show character name if it exists (not all cast have character info) */}
           {actor.character && <div className="cast-character-updated">{actor.character}</div>}

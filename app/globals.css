@@ -550,6 +550,7 @@ main {
 }
 
 .movie-poster-large {
+  position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -692,6 +693,25 @@ main {
 .cast-character-updated {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.cast-avatar-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.cast-avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--text-muted);
+  border: 2px solid var(--glass-border);
 }
 
 /* Home Page Styles */
