@@ -10,6 +10,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'm.media-amazon.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**.imdb.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.media-amazon.com',
+      },
     ],
   },
 };
