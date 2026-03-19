@@ -1,4 +1,4 @@
-import SearchInput from "./components/SearchInput";
+import { SearchForm } from "./components/SearchForm";
 
 export default function Home() {
   return (
@@ -14,8 +14,9 @@ export default function Home() {
       <p className="home-subheadline">
         Get comprehensive insights, cast details, and AI-powered sentiment analysis for any film.
       </p>
-
-      <SearchInput />
+      <div className="home-search-container" id="search">
+      <SearchForm />
+      </div>
     </div>
   );
 }
