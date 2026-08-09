@@ -8,15 +8,50 @@ import {
 } from '../types';
 
 // Minimum comment length to filter out spam/incomplete comments
-const MIN_COMMENT_LENGTH = 10;
-// Maximum number of comments to return after filtering
+const MIN_COMMENT_LENGTH = 15; // was 10 — raised slightly since spam-pattern filtering now catches short junk too
+// Maximum number of comments to return after filtering (was 10)
+// Fewer, higher-signal comments carry roughly the same sentiment signal
+// at a lower token cost — see README "Token Optimization" section.
 const MAX_COMMENTS = 10;
 // Number of comments to request from YouTube API (will be filtered down)
 const COMMENT_MAX_RESULTS = 50;
 
+// Patterns that indicate spam/noise rather than genuine sentiment.
+// Kept as a small, explicit list rather than a heavier NLP pass —
+// this is a cheap pre-filter, not a classifier.
+const SPAM_PATTERNS = [
+  /https?:\/\//i,
+  /www\./i,
+  /subscribe/i,
+  /check out my channel/i,
+  /^first$/i,
+  /^\d+(st|nd|rd|th)$/i,
+];
+
+// Matches most common emoji ranges. Emoji rarely add sentiment signal
+// beyond what the surrounding text already conveys, and they're
+// token-expensive relative to their information content.
+const EMOJI_REGEX = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu;
+
+function cleanCommentText(text: string): string {
+  return text
+    .replace(EMOJI_REGEX, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isSpam(text: string): boolean {
+  return SPAM_PATTERNS.some(pattern => pattern.test(text));
+}
+
 function filterComments(comments: FilteredComment[]): FilteredComment[] {
   return comments
-    .filter(comment => comment.text.length > MIN_COMMENT_LENGTH)
+    .map(comment => ({ ...comment, text: cleanCommentText(comment.text) }))
+    .filter(comment => comment.text.length > MIN_COMMENT_LENGTH && !isSpam(comment.text))
+    // Rank by engagement so the comments that make it into the prompt
+    // are the ones most likely to reflect actual audience sentiment,
+    // not just whatever YouTube's relevance ordering returned first.
+    .sort((a, b) => b.likeCount - a.likeCount)
     .slice(0, MAX_COMMENTS);
 }
 

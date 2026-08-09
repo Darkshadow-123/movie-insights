@@ -38,8 +38,9 @@ export default async function MoviePage({
       youtubeResult.comments.comments  
     );  
   } catch (err) {  
-    sentiment = getFallbackSentiment(movieData.imdbRating || '0', movieData.Plot || '');  
-    sentimentStatus = 'fallback';  
+    console.error('[sentiment] analyzeCombined failed:', err); // add this
+    sentiment = getFallbackSentiment(movieData.imdbRating || '0', movieData.Plot || '');
+    sentimentStatus = 'fallback';
   }  
   
   // Combine all data  
