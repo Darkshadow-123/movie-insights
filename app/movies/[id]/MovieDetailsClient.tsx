@@ -1,18 +1,41 @@
 "use client";  
    
+import { useState } from 'react';
 import Image from 'next/image';
-import { MovieData } from "@/app/types";  
-import {  
-  SentimentCard,  
-  TrailerPlayer,  
-  TrailerComments,  
-  CastGrid,  
-  YouTubeStatusBanner,  
-  Tabs,  
-} from "@/app/components";  
+import { MovieData, CastData, YouTubeStatus, FilteredComment, TrailerComments as TrailerCommentsType } from "@/app/types";  
+import { Tabs, TrailerPlayer, YouTubeStatusBanner, TrailerComments } from "@/app/components";  
 import { Navbar } from "@/app/components/layout";
-  
-export function MovieDetailsClient({ movie }: { movie: MovieData }) {  
+import { CastTabContent } from './CastTabContent';
+
+interface MovieDetailsClientProps {
+  movie: MovieData;
+  imdbId: string;
+  trailerId: string | null;
+  youtubeStatus?: YouTubeStatus;
+  youtubeMessage?: string;
+  trailerComments: TrailerCommentsType | null;
+  // Only the Gemini call is still deferred — it's the expensive part
+  // of this page (measured ~4s vs. YouTube's ~1s), so it's the only
+  // piece worth hiding behind a Suspense boundary. Trailer + comments
+  // are fetched once, synchronously, in page.tsx now.
+  sentimentSection: React.ReactNode;
+}
+
+export function MovieDetailsClient({
+  movie,
+  imdbId,
+  trailerId,
+  youtubeStatus,
+  youtubeMessage,
+  trailerComments,
+  sentimentSection,
+}: MovieDetailsClientProps) {  
+  // Cast data is fetched lazily by CastTabContent when the Cast tab is
+  // first opened, but cached here (one level up) so switching tabs away
+  // and back doesn't trigger a refetch — see the comment in
+  // CastTabContent.tsx for why that lift is necessary.
+  const [castData, setCastData] = useState<CastData | null>(null);
+
   const renderStars = (rating: number) => {  
     const full = Math.floor(rating / 2);  
     const half = rating % 2 >= 1;  
@@ -69,11 +92,8 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
               )}
             </div>
             <div className="movie-trailer">
-              {movie.trailerId && <TrailerPlayer trailerId={movie.trailerId} />}
-              <YouTubeStatusBanner
-                status={movie.youtubeStatus}
-                message={movie.youtubeMessage}
-              />              
+              {trailerId && <TrailerPlayer trailerId={trailerId} />}
+              <YouTubeStatusBanner status={youtubeStatus} message={youtubeMessage} />
             </div>
           </div>
           <div>
@@ -99,19 +119,13 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
                 label: "Reviews",
                 content: (
                   <div className="tab-content-reviews">
-                    {movie.sentiment && (
-                      <SentimentCard
-                        sentiment={movie.sentiment}
-                        isFallback={movie.sentimentStatus === "fallback"}
+                    {sentimentSection}
+                    {trailerComments && trailerComments.comments.length > 0 && (
+                      <TrailerComments
+                        comments={trailerComments.comments}
+                        totalCount={trailerComments.totalCount}
                       />
                     )}
-                    {movie.trailerComments &&
-                      movie.trailerComments.comments.length > 0 && (
-                        <TrailerComments
-                          comments={movie.trailerComments.comments}
-                          totalCount={movie.trailerComments.totalCount}
-                        />
-                      )}
                   </div>
                 ),
               },
@@ -120,13 +134,11 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
                 label: "Cast",
                 content: (
                   <div className="tab-content-cast">
-                    {movie.castAndCrew && movie.castAndCrew.cast?.length > 0 ? (
-                      <CastGrid cast={movie.castAndCrew.cast} />
-                    ) : (
-                      <p className="no-cast" style={{ color: "var(--text-muted)" }}>
-                        No cast information available
-                      </p>
-                    )}
+                    <CastTabContent
+                      imdbId={imdbId}
+                      cachedData={castData}
+                      onLoaded={setCastData}
+                    />
                   </div>
                 ),
               },

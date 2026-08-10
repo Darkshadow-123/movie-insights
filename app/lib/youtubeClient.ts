@@ -12,7 +12,7 @@ const MIN_COMMENT_LENGTH = 15; // was 10 — raised slightly since spam-pattern 
 // Maximum number of comments to return after filtering (was 10)
 // Fewer, higher-signal comments carry roughly the same sentiment signal
 // at a lower token cost — see README "Token Optimization" section.
-const MAX_COMMENTS = 10;
+const MAX_COMMENTS = 6;
 // Number of comments to request from YouTube API (will be filtered down)
 const COMMENT_MAX_RESULTS = 50;
 
@@ -74,7 +74,9 @@ export async function getTrailerWithComments(title: string, year: string): Promi
     
     const searchUrl = `${baseUrl}${config.youtube.searchEndpoint}?part=snippet&q=${encodedQuery}&type=video&videoCategoryId=${config.youtube.videoCategoryId}&maxResults=1&key=${apiKey}`;
 
+    const searchStart = Date.now();
     const searchResponse = await fetch(searchUrl, { next: { revalidate: 86400 } });
+    console.log(`[youtube] search call: ${Date.now() - searchStart}ms`);
     
     if (!searchResponse.ok) {
       return {
@@ -108,7 +110,9 @@ export async function getTrailerWithComments(title: string, year: string): Promi
     const trailerId = searchData.items[0].id.videoId;
 
     const commentsUrl = `${baseUrl}/commentThreads?part=snippet&videoId=${trailerId}&maxResults=${COMMENT_MAX_RESULTS}&textFormat=plainText&order=relevance&key=${apiKey}`;
+    const commentsStart = Date.now();
     const commentsResponse = await fetch(commentsUrl, { next: { revalidate: 86400 } });
+    console.log(`[youtube] comments call: ${Date.now() - commentsStart}ms`);
 
     if (!commentsResponse.ok) {
       return {

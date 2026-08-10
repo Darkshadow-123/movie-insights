@@ -322,6 +322,24 @@ main {
   to { transform: rotate(360deg); }
 }
 
+@keyframes pulseDots {
+  0%, 20% { opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+.sentiment-summary-loading span {
+  animation: pulseDots 1.4s infinite;
+}
+
+.sentiment-summary-loading span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.sentiment-summary-loading span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
 @media (max-width: 640px) {
   .movie-title-large {
     font-size: 36px;

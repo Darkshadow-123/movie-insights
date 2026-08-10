@@ -64,7 +64,6 @@ async function callGemini(
   rating: string,
   comments: FilteredComment[]
 ): Promise<SentimentData> {
-  console.log('[gemini] callGemini invoked');
   const apiKey = config.gemini.apiKey;
   const model = config.gemini.model;
 
@@ -128,6 +127,23 @@ ${context}`;
   return parseAIResponse(text);
 }
 
+// In-flight request lock, keyed the same way as the cache below.
+// Fixes a cache-stampede race: unstable_cache only writes to the cache
+// AFTER a call resolves, so if two requests for the same movie arrive
+// close together, both can miss the cache and both fire a full paid
+// Gemini call before either finishes. This map makes the second request
+// await the first's in-flight promise instead of starting its own.
+//
+// Scope caveat: this Map lives in the Node.js module scope, so it only
+// dedupes requests handled by the SAME server process/instance. On a
+// platform that runs multiple serverless instances concurrently (e.g.
+// Vercel under load), two instances can still both miss at once — this
+// closes the gap for the common case (single dev server, or a warm
+// serverless instance handling a burst) but isn't a full distributed
+// lock. A production-grade fix would use a shared lock (e.g. Redis)
+// keyed the same way.
+const inFlightRequests = new Map<string, Promise<SentimentData>>();
+
 // Wraps the Gemini call in Next.js's data cache, keyed by movie title +
 // rating (a stable proxy for movie identity here). Repeat visits to the
 // same movie page — by the same user or different users — hit the cache
@@ -142,12 +158,25 @@ export function analyzeCombined(
   rating: string,
   comments: FilteredComment[]
 ): Promise<SentimentData> {
+  const key = `${title}::${rating}`;
+
+  const existing = inFlightRequests.get(key);
+  if (existing) {
+    return existing;
+  }
+
   const cached = unstable_cache(
     async () => callGemini(title, plot, rating, comments),
     ['sentiment', title, rating],
     { revalidate: 60 * 60 * 24 * 7, tags: ['sentiment'] }
   );
-  return cached();
+
+  const promise = cached().finally(() => {
+    inFlightRequests.delete(key);
+  });
+
+  inFlightRequests.set(key, promise);
+  return promise;
 }
 
 export function getFallbackSentiment(rating: string, plot: string): SentimentData {

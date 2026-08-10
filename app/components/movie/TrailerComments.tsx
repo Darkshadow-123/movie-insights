@@ -20,8 +20,13 @@ export function TrailerComments({ comments, totalCount }: TrailerCommentsProps) 
           <div key={i} className="comment-card">
             <div className="comment-header">
               <span className="comment-author">{comment.author}</span>
-              {/* Convert YouTube API timestamp to locale date string */}
-              <span className="comment-date">{new Date(comment.publishedAt).toLocaleDateString()}</span>
+              {/* Convert YouTube API timestamp to a date string.
+                  Locale pinned explicitly (en-US) so server-rendered HTML
+                  matches client-rendered HTML — an unpinned locale caused
+                  a hydration mismatch when the server's default locale
+                  (e.g. en-US, m/d/y) differed from the browser's
+                  (e.g. en-GB, d/m/y). */}
+              <span className="comment-date">{new Date(comment.publishedAt).toLocaleDateString('en-US')}</span>
             </div>
             <p className="comment-text">{comment.text}</p>
             <div className="comment-likes">Likes: {comment.likeCount}</div>
