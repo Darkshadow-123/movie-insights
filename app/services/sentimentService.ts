@@ -5,9 +5,6 @@ import { SentimentData, FilteredComment } from '../types';
 
 function parseAIResponse(text: string): SentimentData {
   try {
-    // With responseSchema enforced below, Gemini's output is guaranteed
-    // valid JSON with no markdown fences — but we keep this stripping
-    // logic as a defensive fallback in case the SDK/model version changes.
     let cleaned = text.trim();
 
     if (cleaned.startsWith('```json')) {
@@ -34,11 +31,6 @@ function parseAIResponse(text: string): SentimentData {
   }
 }
 
-// Explicit schema, enforced by the Gemini API itself (responseMimeType +
-// responseSchema) instead of being spelled out as instructions inside the
-// prompt text. This removes ~150 tokens of "Provide a JSON response
-// with..." boilerplate from every call and removes the malformed-JSON
-// failure mode that parseAIResponse's try/catch was defending against.
 const SENTIMENT_SCHEMA = {
   type: Type.OBJECT,
   properties: {
@@ -80,8 +72,6 @@ async function callGemini(
     context += `\n\nYouTube Trailer Comments:\n${commentsList}`;
   }
 
-  // Schema/format instructions removed from the prompt text — they now
-  // live in `config.responseSchema` below instead.
   const prompt = `Analyze the overall audience sentiment for this movie. Consider both the movie's plot and IMDb rating, as well as actual YouTube trailer comments from viewers (if available).
 
 ${context}`;
@@ -95,9 +85,6 @@ ${context}`;
     },
   });
 
-  // Log real token usage so before/after numbers in the README are
-  // measured, not estimated. Cheap to leave in; delete before shipping
-  // if you don't want it in production logs.
   if (response.usageMetadata) {
     console.log(
       `[gemini] prompt tokens: ${response.usageMetadata.promptTokenCount}, ` +
@@ -127,31 +114,85 @@ ${context}`;
   return parseAIResponse(text);
 }
 
-// In-flight request lock, keyed the same way as the cache below.
-// Fixes a cache-stampede race: unstable_cache only writes to the cache
-// AFTER a call resolves, so if two requests for the same movie arrive
-// close together, both can miss the cache and both fire a full paid
-// Gemini call before either finishes. This map makes the second request
-// await the first's in-flight promise instead of starting its own.
-//
-// Scope caveat: this Map lives in the Node.js module scope, so it only
-// dedupes requests handled by the SAME server process/instance. On a
-// platform that runs multiple serverless instances concurrently (e.g.
-// Vercel under load), two instances can still both miss at once — this
-// closes the gap for the common case (single dev server, or a warm
-// serverless instance handling a burst) but isn't a full distributed
-// lock. A production-grade fix would use a shared lock (e.g. Redis)
-// keyed the same way.
 const inFlightRequests = new Map<string, Promise<SentimentData>>();
 
-// Wraps the Gemini call in Next.js's data cache, keyed by movie title +
-// rating (a stable proxy for movie identity here). Repeat visits to the
-// same movie page — by the same user or different users — hit the cache
-// instead of re-spending tokens. This is the single highest-leverage
-// change for this app: token reduction per call helps, but eliminating
-// *redundant* calls entirely is a much bigger lever for a page that gets
-// revisited. Revalidates every 7 days since sentiment for a given movie
-// doesn't meaningfully change day to day.
+const REDIS_LOCK_TTL_MS = 30_000;
+const REDIS_RESULT_HANDOFF_TTL_S = 60 * 60 * 24 * 7; // 7 days (604,800 seconds)
+const REDIS_POLL_INTERVAL_MS = 300;
+const REDIS_MAX_WAIT_MS = 15_000;
+
+async function withDistributedLock(
+  key: string,
+  compute: () => Promise<SentimentData>
+): Promise<SentimentData> {
+  console.log(
+    '[debug] UPSTASH_REDIS_REST_URL present:', !!process.env.UPSTASH_REDIS_REST_URL,
+    '| UPSTASH_REDIS_REST_TOKEN present:', !!process.env.UPSTASH_REDIS_REST_TOKEN
+  );
+
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return compute();
+  }
+
+  const lockKey = `lock:sentiment:${key}`;
+  const resultKey = `result:sentiment:${key}`;
+
+  // 1. Check if result is ALREADY cached in Redis from a previous run (7-day persistent cache)
+  try {
+    const { redis } = await import('../lib/redis');
+    const preCached = await redis.get<SentimentData>(resultKey);
+    if (preCached) {
+      console.log(`[source:redis-cache-hit] retrieved 7-day persistent result from Upstash Redis for "${key}"`);
+      return preCached;
+    }
+  } catch (err) {
+    console.error('[redis] pre-lock cache check failed, proceeding to lock:', err);
+  }
+
+  let token: string | null = null;
+  try {
+    const { acquireLock } = await import('../lib/distributedLock');
+    token = await acquireLock(lockKey, REDIS_LOCK_TTL_MS);
+  } catch (err) {
+    console.error('[redis] lock acquire failed, proceeding without distributed coordination:', err);
+    return compute();
+  }
+
+  if (token) {
+    console.log(`[redis] acquired lock for "${key}"`);
+    try {
+      console.log(`[source:gemini-live-call] firing live Gemini API call for "${key}"`);
+      const result = await compute();
+      const { redis } = await import('../lib/redis');
+      redis
+        .set(resultKey, result, { ex: REDIS_RESULT_HANDOFF_TTL_S })
+        .catch((err) => console.error('[redis] result handoff write failed:', err));
+      return result;
+    } finally {
+      const { releaseLock } = await import('../lib/distributedLock');
+      await releaseLock(lockKey, token)
+        .then(() => console.log(`[redis] released lock for "${key}"`))
+        .catch((err) =>
+          console.error('[redis] lock release failed (will expire via TTL):', err)
+        );
+    }
+  }
+
+  const { redis } = await import('../lib/redis');
+  const deadline = Date.now() + REDIS_MAX_WAIT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, REDIS_POLL_INTERVAL_MS));
+    const cached = await redis.get<SentimentData>(resultKey).catch(() => null);
+    if (cached) {
+      console.log(`[source:redis-handoff] retrieved result from Upstash Redis handoff for "${key}"`);
+      return cached;
+    }
+  }
+
+  console.error('[redis] wait for in-flight result timed out, computing independently');
+  return compute();
+}
+
 export function analyzeCombined(
   title: string,
   plot: string,
@@ -162,16 +203,20 @@ export function analyzeCombined(
 
   const existing = inFlightRequests.get(key);
   if (existing) {
+    console.log(`[source:in-flight-memory] reusing active in-memory Promise for "${key}"`);
     return existing;
   }
 
   const cached = unstable_cache(
-    async () => callGemini(title, plot, rating, comments),
+    async () => withDistributedLock(key, () => callGemini(title, plot, rating, comments)),
     ['sentiment', title, rating],
     { revalidate: 60 * 60 * 24 * 7, tags: ['sentiment'] }
   );
 
-  const promise = cached().finally(() => {
+  const promise = cached().then((res) => {
+    console.log(`[source:nextjs-cache-hit] returned result for "${key}"`);
+    return res;
+  }).finally(() => {
     inFlightRequests.delete(key);
   });
 
