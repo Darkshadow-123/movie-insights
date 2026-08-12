@@ -116,10 +116,11 @@ ${context}`;
 
 const inFlightRequests = new Map<string, Promise<SentimentData>>();
 
-const REDIS_LOCK_TTL_MS = 30_000;
-const REDIS_RESULT_HANDOFF_TTL_S = 60 * 60 * 24 * 7; // 7 days (604,800 seconds)
-const REDIS_POLL_INTERVAL_MS = 300;
-const REDIS_MAX_WAIT_MS = 15_000;
+const REDIS_LOCK_TTL_MS = 20_000;       // 20 seconds lock TTL (Emergency cleanup)
+const REDIS_RESULT_HANDOFF_TTL_S = 604800; // 7 days persistent cache
+const REDIS_POLL_INTERVAL_MS = 150;      // Poll Redis every 150ms for instant handoff
+const REDIS_MAX_WAIT_MS = 10_000;        // 10 seconds max wait cap (Optimal completion vs UX balance)
+
 
 async function withDistributedLock(
   key: string,

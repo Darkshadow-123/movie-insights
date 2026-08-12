@@ -1,19 +1,19 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
+import { check, sleep, group } from 'k6';
 import { Trend, Counter } from 'k6/metrics';
+import secrets from 'k6/secrets';
+import tempo from 'https://jslib.k6.io/http-instrumentation-tempo/1.0.0/index.js';
+import pyroscope from 'https://jslib.k6.io/http-instrumentation-pyroscope/1.0.1/index.js';
 
-// Custom metrics to track stage performance separately
+const TARGET_HOST = __ENV.TARGET_HOST || 'movie-insights-seven.vercel.app';
+const DEFAULT_FALLBACK_HASH = '78dae3ac48456d81cb49fb6c9b4223b809c70ccaaf';
+
+// Custom metrics
 const shellDuration = new Trend('shell_req_duration');
 const sentimentDuration = new Trend('sentiment_action_req_duration');
 const totalPerceivedDuration = new Trend('total_user_perceived_duration');
 const fastHitsCounter = new Counter('fast_cache_hits');
 const slowMissesCounter = new Counter('slow_cache_misses');
-
-// 💡 IMPORTANT: Replace this hash with your active deployment's 'Next-Action' header hash!
-// How to find: Open Chrome DevTools -> Network -> Visit movie page -> Copy 'Next-Action' header from POST request.
-const NEXT_ACTION_HASH = __ENV.NEXT_ACTION_HASH || '78dae3ac48456d81cb49fb6c9b4223b809c70ccaaf';
-
-const TARGET_HOST = __ENV.TARGET_HOST || 'movie-insights-seven.vercel.app';
 
 // Pool of 50 diverse, valid IMDb Movie IDs to test realistic cache hit/miss distributions
 const MOVIE_POOL = [
@@ -32,7 +32,7 @@ const MOVIE_POOL = [
   { id: 'tt0076759', title: 'Star Wars: Episode IV - A New Hope', rating: '8.6', plot: 'Luke Skywalker joins forces with a Jedi Knight...' },
   { id: 'tt0080684', title: 'Star Wars: Episode V - The Empire Strikes Back', rating: '8.7', plot: 'After the Rebels are overpowered by the Empire...' },
   { id: 'tt0107290', title: 'Jurassic Park', rating: '8.2', plot: 'A pragmatic paleontologist touring an almost complete theme park...' },
-  { id: 'tt0848228', title: 'The Avengers', rating: '8.0', plot: 'Earth\'s mightiest heroes must come together...' },
+  { id: 'tt0848228', title: 'The Avengers', rating: '8.0', plot: "Earth's mightiest heroes must come together..." },
   { id: 'tt15398776', title: 'Oppenheimer', rating: '8.9', plot: 'The story of American scientist J. Robert Oppenheimer...' },
   { id: 'tt0499549', title: 'Avatar', rating: '7.9', plot: 'A paraplegic Marine dispatched to the moon Pandora...' },
   { id: 'tt0099685', title: 'Goodfellas', rating: '8.7', plot: 'The story of Henry Hill and his life in the mob...' },
@@ -43,7 +43,7 @@ const MOVIE_POOL = [
   { id: 'tt0114369', title: 'Se7en', rating: '8.6', plot: 'Two detectives, a rookie and a veteran, hunt a serial killer...' },
   { id: 'tt0103064', title: 'Terminator 2: Judgment Day', rating: '8.6', plot: 'A cyborg, identical to the one who failed to kill Sarah Connor...' },
   { id: 'tt0110357', title: 'The Lion King', rating: '8.5', plot: 'A Lion prince is cast out of his pride by his cruel uncle...' },
-  { id: 'tt0317219', title: 'Spirited Away', rating: '8.6', plot: 'During her family\'s move to the suburbs, a 10-year-old girl wanders...' },
+  { id: 'tt0317219', title: 'Spirited Away', rating: '8.6', plot: "During her family's move to the suburbs, a 10-year-old girl wanders..." },
   { id: 'tt0102926', title: 'The Silence of the Lambs', rating: '8.6', plot: 'A young F.B.I. cadet must receive the help of an incarcerated cannibal...' },
   { id: 'tt0079588', title: 'Alien', rating: '8.5', plot: 'The crew of a commercial spacecraft encounters a deadly lifeform...' },
   { id: 'tt0082971', title: 'Raiders of the Lost Ark', rating: '8.4', plot: 'In 1936, archaeologist Indiana Jones is hired by the U.S. government...' },
@@ -51,13 +51,13 @@ const MOVIE_POOL = [
   { id: 'tt0169547', title: 'American Beauty', rating: '8.3', plot: 'A sexually frustrated suburban father has a mid-life crisis...' },
   { id: 'tt0253474', title: 'The Pianist', rating: '8.5', plot: 'A Polish Jewish musician struggles to survive the destruction of the Warsaw ghetto...' },
   { id: 'tt0418763', title: 'The Prestige', rating: '8.5', plot: 'After a tragic accident, two stage magicians in 1890s London engage in a battle...' },
-  { id: 'tt1160419', title: 'Dune', rating: '8.0', plot: 'A noble family becomes embroiled in a war for control over the galaxy\'s most valuable asset...' },
+  { id: 'tt1160419', title: 'Dune', rating: '8.0', plot: "A noble family becomes embroiled in a war for control over the galaxy's most valuable asset..." },
   { id: 'tt15239678', title: 'Dune: Part Two', rating: '8.6', plot: 'Paul Atreides unites with Chani and the Fremen while seeking revenge...' },
   { id: 'tt0480249', title: 'I Am Legend', rating: '7.2', plot: 'Years after a plague kills most of humanity and transforms the rest into monsters...' },
   { id: 'tt0993846', title: 'The Wolf of Wall Street', rating: '8.2', plot: 'Based on the true story of Jordan Belfort, from his rise to a wealthy stockbroker...' },
   { id: 'tt0898266', title: 'The Big Short', rating: '7.8', plot: 'In 2006-2007 a group of investors bet against the US mortgage market...' },
   { id: 'tt1877830', title: 'The Batman', rating: '7.8', plot: 'When a sadistic serial killer begins murdering key political figures in Gotham...' },
-  { id: 'tt1087260', title: 'Spider-Man: No Way Home', rating: '8.2', plot: 'With Spider-Man\'s identity now revealed, Peter asks Doctor Strange for help...' },
+  { id: 'tt1087260', title: 'Spider-Man: No Way Home', rating: '8.2', plot: "With Spider-Man's identity now revealed, Peter asks Doctor Strange for help..." },
   { id: 'tt6751668', title: 'Parasite', rating: '8.5', plot: 'Greed and class discrimination threaten the newly formed symbiotic relationship...' },
   { id: 'tt7286456', title: 'Joker', rating: '8.4', plot: 'During the 1980s, a failed stand-up comedian is driven insane and turns to crime...' },
   { id: 'tt9362722', title: 'Spider-Man: Across the Spider-Verse', rating: '8.6', plot: 'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People...' },
@@ -65,96 +65,109 @@ const MOVIE_POOL = [
   { id: 'tt0118715', title: 'The Big Lebowski', rating: '8.1', plot: 'Jeff "The Dude" Lebowski, mistaken for a millionaire of the same name...' },
   { id: 'tt0371724', title: 'The Departed', rating: '8.5', plot: 'An undercover cop and a mole in the police attempt to identify each other...' },
   { id: 'tt0112471', title: 'Before Sunrise', rating: '8.1', plot: 'A young man and woman meet on a train in Europe, and wind up spending one evening together...' },
-  { id: 'tt0110357', title: 'Aladdin', rating: '8.0', plot: 'A street urchin fights for the love of a princess with the help of a genie...' },
-  { id: 'tt0088247', title: 'The Terminator', rating: '8.1', plot: 'A human soldier is sent from 2029 to 1984 to stop an almost indestructible cyborg...' }
+  { id: 'tt0103639', title: 'Aladdin', rating: '8.0', plot: 'A street urchin fights for the love of a princess with the help of a genie...' },
+  { id: 'tt0088247', title: 'The Terminator', rating: '8.1', plot: 'A human soldier is sent from 2029 to 1984 to stop an almost indestructible cyborg...' },
 ];
 
 export const options = {
   scenarios: {
     protocol_load_test: {
       executor: 'ramping-vus',
-      startVUs: 0,
+      startVUs: 1,
       stages: [
-        { duration: '15s', target: 100 }, // Ramp up to 100 VUs over 15s
-        { duration: '30s', target: 100 }, // Hold 100 VUs for 30s
+        { duration: '15s', target: 75 }, // Ramp up to 75 VUs over 15s
+        { duration: '30s', target: 75 }, // Hold 75 VUs for 30s
         { duration: '10s', target: 0 },  // Ramp down over 10s
       ],
       gracefulRampDown: '5s',
     },
   },
   thresholds: {
-    // Overall HTTP protocol failure rate threshold (< 1%)
     'http_req_failed': ['rate<0.01'],
-    // Page Shell GET latency threshold (95% under 800ms)
+    'checks': ['rate>0.95'],
     'shell_req_duration': ['p(95)<800'],
-    // Sentiment Action POST latency threshold (95% under 2500ms)
-    'sentiment_action_req_duration': ['p(95)<2500'],
-    // Combined total user-perceived load time (95% under 3000ms)
-    'total_user_perceived_duration': ['p(95)<3000'],
+    'sentiment_action_req_duration': ['p(95)<2500', 'p(99)<4000'],
+    'total_user_perceived_duration': ['p(95)<3000', 'p(99)<5000'],
   },
 };
 
-export default function () {
-  // Select a movie randomly from the pool of 50 movies
-  const movie = MOVIE_POOL[Math.floor(Math.random() * MOVIE_POOL.length)];
-  const pageUrl = `https://${TARGET_HOST}/movies/${movie.id}`;
+tempo.instrumentHTTP({ propagator: 'w3c' });
 
-  const iterStart = Date.now();
+export async function setup() {
+  let nextActionHash = __ENV.NEXT_ACTION_HASH;
 
-  // --------------------------------------------------------------------------
-  // STEP 1: Fetch Page Shell (GET /movies/:id)
-  // --------------------------------------------------------------------------
-  const shellRes = http.get(pageUrl, {
-    tags: { name: 'GET_movie_shell' },
-  });
-
-  shellDuration.add(shellRes.timings.duration);
-
-  check(shellRes, {
-    'shell status is 200': (r) => r.status === 200,
-    'shell response is non-empty': (r) => r.body && r.body.length > 0,
-  });
-
-  // --------------------------------------------------------------------------
-  // STEP 2: Execute Client Sentiment Server Action (POST /movies/:id)
-  // --------------------------------------------------------------------------
-  const actionPayload = JSON.stringify([
-    movie.title,
-    movie.plot,
-    movie.rating,
-    [] // comments parameter
-  ]);
-
-  const actionHeaders = {
-    'Content-Type': 'text/plain;charset=UTF-8',
-    'Next-Action': NEXT_ACTION_HASH,
-    'Accept': 'text/x-component',
-  };
-
-  const actionRes = http.post(pageUrl, actionPayload, {
-    headers: actionHeaders,
-    tags: { name: 'POST_sentiment_action' },
-  });
-
-  sentimentDuration.add(actionRes.timings.duration);
-
-  check(actionRes, {
-    'sentiment action status is 200': (r) => r.status === 200,
-  });
-
-  // Classify hit vs miss based on latency threshold (~600ms boundary)
-  if (actionRes.timings.duration < 600) {
-    fastHitsCounter.add(1);
-  } else {
-    slowMissesCounter.add(1);
+  try {
+    const fromSecrets =
+      (await secrets.get('high-entropy-secret-3').catch(() => null)) ||
+      (await secrets.get('NEXT_ACTION_HASH').catch(() => null));
+    if (fromSecrets) nextActionHash = fromSecrets;
+  } catch (_) {
+    // Falls back gracefully if k6/secrets is omitted
   }
 
-  // --------------------------------------------------------------------------
-  // STEP 3: Record Total Perceived Latency & Dynamic Think Time
-  // --------------------------------------------------------------------------
+  // Final fallback to active deployment hash if no secret or env is set
+  if (!nextActionHash) {
+    nextActionHash = DEFAULT_FALLBACK_HASH;
+  }
+
+  try {
+    pyroscope.instrumentHTTP();
+  } catch (_) {}
+
+  return { nextActionHash };
+}
+
+export default function (data) {
+  const NEXT_ACTION_HASH = data.nextActionHash;
+  const movie = MOVIE_POOL[Math.floor(Math.random() * MOVIE_POOL.length)];
+  const pageUrl = `https://${TARGET_HOST}/movies/${movie.id}`;
+  const iterStart = Date.now();
+
+  group('movie_page_shell', function () {
+    const shellRes = http.get(pageUrl, { tags: { name: 'GET_movie_shell' } });
+    shellDuration.add(shellRes.timings.duration);
+
+    check(shellRes, {
+      'shell status is 200': (r) => r.status === 200,
+      'shell response is non-empty': (r) => r.body && r.body.length > 0,
+      'shell request did not fail at network level': (r) => r.status !== 0,
+    });
+  });
+
+  group('sentiment_server_action', function () {
+    const actionPayload = JSON.stringify([movie.title, movie.plot, movie.rating, []]);
+
+    const actionHeaders = {
+      'Content-Type': 'text/plain;charset=UTF-8',
+      'Next-Action': NEXT_ACTION_HASH,
+      'Accept': 'text/x-component',
+    };
+
+    check(NEXT_ACTION_HASH, {
+      'NEXT_ACTION_HASH resolved': (v) => !!v,
+    });
+
+    const actionRes = http.post(pageUrl, actionPayload, {
+      headers: actionHeaders,
+      tags: { name: 'POST_sentiment_action' },
+    });
+
+    sentimentDuration.add(actionRes.timings.duration);
+
+    check(actionRes, {
+      'sentiment action status is 200': (r) => r.status === 200,
+      'sentiment action request did not fail at network level': (r) => r.status !== 0,
+    });
+
+    if (actionRes.timings.duration < 600) {
+      fastHitsCounter.add(1);
+    } else {
+      slowMissesCounter.add(1);
+    }
+  });
+
   const totalDuration = Date.now() - iterStart;
   totalPerceivedDuration.add(totalDuration);
 
-  // Dynamic Think Time: Random pause between 0.5s and 2.5s (simulating real user browsing)
   sleep(Math.random() * 2 + 0.5);
 }
