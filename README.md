@@ -1,31 +1,39 @@
-# Movie Insights
+# Movie Insights - Movie Discovery App
 
-A Next.js web application that provides comprehensive movie information including cast details, ratings, plot summaries, trailers, and AI-powered audience sentiment analysis.
+A Next.js full-stack web application that allows users to discover movies, browse by genre, search by title, and view comprehensive movie information including cast details, ratings, plot summaries, trailers, and AI-powered audience sentiment analysis.
+
+*Note: This repository contains an existing codebase that predates the full-stack assignment. The core UI for the movie detail page, sentiment analysis pipeline, YouTube trailer comments integration, and Upstash Redis caching were pre-existing. The Browse, Search by Title, Pagination, Filters, and Watchmode API integrations were built specifically for this assignment pass.*
 
 ## Features
 
-- Search movies by IMDb ID
-- View detailed movie information (title, year, runtime, genres, plot)
-- Display movie posters and trailers from YouTube
-- Cast and crew information
-- AI-powered sentiment analysis using Google Gemini
-- YouTube trailer comments analysis
-- Responsive design with modern UI
+- **Discover & Browse**: Explore popular movies or filter them by genre.
+- **Search with Autocomplete**: Search for movies by title with a debounced, live typeahead dropdown.
+- **Movie Details**: View detailed information (title, year, runtime, genres, plot).
+- **Posters & Media**: Display movie posters and trailers from YouTube.
+- **AI Sentiment Analysis**: AI-powered insights on audience reactions based on trailer comments using Google Gemini.
+- **Responsive UI**: Glassmorphism design system that adapts perfectly to desktop, tablet, and mobile screens.
+- **Resilience**: Sophisticated multi-layer caching, distributed locking, and graceful fallbacks for external APIs.
 
-## Tech Stack
+## Tech Stack & Architecture
 
-- **Frontend**: Next.js, React, TypeScript
-- **Styling**: CSS Modules, Glassmorphism design
-- **APIs**: OMDb API, YouTube Data API, Google Gemini AI
+- **Frontend**: Next.js (App Router), React 19, TypeScript
+- **Styling**: Vanilla CSS, Glassmorphism design
+- **State Management**: URL Search Parameters (for shareable, stateful URLs)
+- **APIs & Caching**: Upstash Redis (caching and distributed locks), Next.js `unstable_cache`
 
-### Tech Stack Rationale
+### Three-Source Data Architecture
+This application abstracts movie data through a bespoke backend orchestration layer integrating three independent external services:
+1. **Watchmode API (Discovery)**: Used strictly for list/browse, genre data, and search. It's cost-effective for querying but charges extra for IMDb lookups, so it serves purely as our "discovery engine."
+2. **OMDb API (Details & Posters)**: Used for retrieving high-quality movie posters and the comprehensive detail data (plot, actors, runtime). Watchmode IDs are mapped to IMDb IDs, which are passed to OMDb.
+3. **Google Gemini (Sentiment Analysis)**: Used to analyze YouTube trailer comments and compute an aggregate audience sentiment score, supplementing the traditional 1-10 IMDb rating.
 
-- **Next.js + React**: Enables server-side rendering, app router, and an excellent developer experience, resulting in fast movie search/detail pages and SEO-friendly content.
-- **TypeScript**: Adds static typing for safer refactoring and better tooling as the app grows and integrates multiple external APIs.
-- **CSS Modules + Glassmorphism**: Keeps styles scoped to components while enabling a modern, visually rich UI without global CSS conflicts.
-- **OMDb API**: Provides core movie metadata (title, year, plot, cast, etc.) with a straightforward interface.
-- **YouTube Data API**: Supplies official trailers and user comments to deepen the movie insight experience.
-- **Google Gemini AI**: Powers sentiment analysis and higher-level insights on audience reactions based on trailer comments.
+## Advanced Caching & Resiliency (`sentimentService.ts`)
+
+A standout piece of the pre-existing backend architecture is the 3-Tier Multi-Layer Caching & Distributed Lock system used for AI Sentiment Analysis:
+1. **In-Flight Request Deduplication (Memory)**: Prevents the same Node process from firing identical API calls simultaneously.
+2. **Next.js Data Cache**: A fast, local server revalidation cache (`unstable_cache`).
+3. **Upstash Redis Distributed Lock**: Solves the "Cache Stampede" problem for serverless functions. A global, cross-instance persistent shared cache and atomic lock ensure that concurrent lambdas wait for a single leader to fetch the expensive Gemini response, reducing AI costs by >99%.
+4. **Graceful Fallbacks**: If Gemini rate-limits or fails, the server action seamlessly falls back to a deterministic heuristic based on plot keywords and IMDb rating, ensuring zero downtime for the user.
 
 ## Setup Instructions
 
@@ -36,10 +44,13 @@ A Next.js web application that provides comprehensive movie information includin
    ```
 3. Create a `.env.local` file with your API keys:
    ```bash
+   WATCHMODE_API_KEY=your_watchmode_api_key
    OMDB_API_KEY=your_omdb_api_key
    GEMINI_API_KEY=your_gemini_api_key
    YOUTUBE_API_KEY=your_youtube_api_key
    RAPIDAPI_KEY=your_rapidapi_key
+   UPSTASH_REDIS_REST_URL=your_upstash_url
+   UPSTASH_REDIS_REST_TOKEN=your_upstash_token
    ```
 4. Run the development server:
    ```bash
@@ -47,53 +58,59 @@ A Next.js web application that provides comprehensive movie information includin
    ```
 5. Open [http://localhost:3000](http://localhost:3000)
 
-### Testing
+## Important Technical Decisions
 
-- **Unit tests** (Jest + React Testing Library):
-  ```bash
-  npm test
-  ```
-  This runs the basic unit tests under the `__tests__/` folder (for example, the `ErrorDisplay` component test).
+- **URL-Driven State**: All browse state (`genre`, `sort`, `page`, `q`) is driven entirely by URL search parameters instead of React state. This fulfills the requirement to navigate between detail views and the grid without losing context, and allows users to bookmark specific queries.
+- **Server Actions over API Routes**: The application relies entirely on Next.js Server Actions (`app/actions/*.ts`) rather than traditional REST `app/api` routes. This removes the need for client-side data fetching libraries and significantly speeds up rendering.
+- **Debounced Autocomplete**: Search inputs are wrapped in a custom `useDebouncedValue` hook (~300ms) to prevent rate-limiting the Watchmode API while a user is actively typing.
 
-## Usage
+## Assumptions Made
+- Watchmode and OMDb are both reachable and reliable. If they degrade, the app attempts exponential backoffs. 
+- API quotas are sufficient for regular testing.
 
-1. Enter a valid IMDb ID (e.g., `tt0133093` for The Matrix)
-2. Click Search or press Enter
-3. View movie details, cast, and sentiment analysis
+## Known Limitations
+- **Wishlist Deferred**: As per the assignment scope guidelines for this pass, the persistent wishlist feature (and its associated DB schema/storage) is intentionally deferred.
+- **Watchmode Images**: Watchmode's standard `list-titles` endpoint does not return poster URLs for free. We work around this by mapping the returned `imdb_id` back through our OMDb cache, but this creates a dependency chain.
+
+## AI Tools Used
+AI-assisted development tools (Cursor/Gemini) were used in this pass to:
+- Quickly scaffold React boilerplate for new components like `MovieGrid`, `MovieCard`, and `FilterBar`.
+- Generate the exponential backoff logic for hardening the OMDb client.
+- Map the Watchmode response types into internal TypeScript definitions.
+- The architectural strategy, the three-source API orchestration, and the decision to implement URL-driven state were human decisions.
+
+## What I Would Improve With More Time
+- Implement a relational database (e.g., PostgreSQL + Prisma) to build out the deferred Wishlist functionality and store user sessions.
+- Introduce infinite scroll via Intersection Observers rather than traditional pagination.
+- Pre-warm the cache for trending movies via a cron job to make the initial browse experience perfectly instant.
+
+---
 
 ## Project Structure
 
-```
+```text
 app/
-├── api/
-│   ├── movie/route.ts         # Search by title
-│   └── movies/[id]/route.ts   # Full movie details
+├── actions/
+│   ├── discoverAction.ts      # Watchmode API orchestration 
+│   ├── searchAction.ts        # Legacy IMDb lookup
+│   ├── sentimentAction.ts     # Resilient AI fetch
+│   └── castAction.ts          
 ├── components/
-│   ├── common/
-│   │   ├── ErrorDisplay.tsx
-│   │   ├── LoadingSpinner.tsx
-│   │   └── Tabs.tsx + Tabs.module.css
-│   ├── layout/
-│   │   ├── Navbar.tsx + Navbar.module.css
-│   │   └── index.ts
-│   └── movie/
-│       ├── CastGrid.tsx
-│       ├── SentimentCard.tsx
-│       ├── TrailerComments.tsx
-│       ├── TrailerPlayer.tsx
-│       └── YouTubeStatusBanner.tsx
-├── lib/                       # API clients
+│   ├── MovieGrid.tsx          # Browse grid with skeletons
+│   ├── MovieCard.tsx          # Single poster UI
+│   ├── FilterBar.tsx          # URL-driven select dropdowns
+│   ├── Pagination.tsx         
+│   └── SearchForm.tsx         # Live autocomplete input
+├── hooks/
+│   └── useDebouncedValue.ts   # Rate-limiting typing
+├── lib/                       # Thin API clients
+│   ├── watchmodeClient.ts
+│   ├── omdbClient.ts
+│   └── redis.ts               
 ├── services/                  # Business logic
-├── types/                     # TypeScript types
-├── movies/[id]/page.tsx       # Movie detail page
-├── globals.css                # All styles
-├── layout.tsx                # Root layout
-└── page.tsx                  # Home page
+│   └── sentimentService.ts    # 4-tier caching layer
+├── types/                     # TypeScript definitions
+├── movies/[id]/page.tsx       # Movie detail view
+├── page.tsx                   # Homepage / Browse View
+└── globals.css                # Glassmorphism design system
 ```
-
-## Assumptions
-
-- You have valid API keys for OMDb, Google Gemini, YouTube Data API, and RapidAPI (for IMDb-related endpoints) and have configured them in `.env.local` as shown above.
-- Network access to these external APIs is available from the environment where the app is running.
-- IMDb IDs provided by the user (for example, `tt0133093`) are valid and correspond to actual movies in the OMDb/IMDb ecosystem.
-- This project is intended primarily as a demo / educational application and not as a production-ready system; hardening concerns such as rate limiting, full observability, and advanced security are out of scope.
