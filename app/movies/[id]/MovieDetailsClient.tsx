@@ -1,6 +1,7 @@
 "use client";  
    
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MovieData, CastData, YouTubeStatus, FilteredComment, TrailerComments as TrailerCommentsType } from "@/app/types";  
 import { Tabs, TrailerPlayer, YouTubeStatusBanner, TrailerComments } from "@/app/components";  
@@ -35,6 +36,7 @@ export function MovieDetailsClient({
   // and back doesn't trigger a refetch — see the comment in
   // CastTabContent.tsx for why that lift is necessary.
   const [castData, setCastData] = useState<CastData | null>(null);
+  const router = useRouter();
 
   const renderStars = (rating: number) => {  
     const full = Math.floor(rating / 2);  
@@ -58,6 +60,26 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
 
       <section className="movie-info-section">
         <div className="container">
+          <button 
+            onClick={() => router.back()} 
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              padding: '0 0 24px 0',
+              transition: 'color 0.2s ease'
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+          >
+            ← Back
+          </button>
           <div className="movie-details">
             <h1 className="movie-title-large">{movie.Title}</h1>
 

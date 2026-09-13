@@ -68,6 +68,7 @@ h6 {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 40px;
+  width: 100%;
 }
 
 .main {
@@ -588,6 +589,7 @@ main {
 
 /* Movie Info Section */
 .movie-info-section {
+  padding-top: 80px;
   padding-bottom: 40px;
 }
 
@@ -1034,6 +1036,17 @@ main {
   z-index: 50;
 }
 
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
 .custom-select-container {
   position: relative;
   display: inline-block;
@@ -1056,11 +1069,32 @@ main {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  min-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-select:hover:not(.disabled) {
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.filter-select:focus {
+  border-color: var(--shiny-cta-bg);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 .filter-select.open {
-  border-color: var(--shiny-cta-highlight);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 15 12 9 6 15'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+.filter-select.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .custom-select-dropdown {
@@ -1096,8 +1130,9 @@ main {
   text-overflow: ellipsis;
 }
 
-.custom-select-option:hover {
-  background: rgba(255, 255, 255, 0.1);
+.custom-select-option:hover,
+.custom-select-option.highlighted {
+  background-color: rgba(255, 255, 255, 0.1);
   padding-left: 20px;
 }
 
@@ -1162,37 +1197,6 @@ main {
   border-radius: 4px;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 48px;
-}
-
-.pagination-btn {
-  padding: 10px 20px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
 
 .autocomplete-dropdown {
   position: absolute;
@@ -1277,4 +1281,43 @@ main {
 .autocomplete-year {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+  padding-bottom: 20px;
+}
+
+.pagination-btn {
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffffff, #cccccc);
+  color: var(--shiny-cta-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: var(--text-secondary);
 }
