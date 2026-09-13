@@ -8,10 +8,11 @@ A Next.js full-stack web application that allows users to discover movies, brows
 
 - **Discover & Browse**: Explore popular movies or filter them by genre.
 - **Search with Autocomplete**: Search for movies by title with a debounced, live typeahead dropdown.
+- **My Wishlist**: Bookmark movies to a persistent wishlist using anonymous cookie-based identity.
 - **Movie Details**: View detailed information (title, year, runtime, genres, plot).
 - **Posters & Media**: Display movie posters and trailers from YouTube.
 - **AI Sentiment Analysis**: AI-powered insights on audience reactions based on trailer comments using Google Gemini.
-- **Responsive UI**: Glassmorphism design system that adapts perfectly to desktop, tablet, and mobile screens.
+- **Responsive UI**: Glassmorphism design system that adapts perfectly to desktop, tablet, and mobile screens with responsive grids and fluid layouts.
 - **Resilience**: Sophisticated multi-layer caching, distributed locking, and graceful fallbacks for external APIs.
 
 ## Tech Stack & Architecture
@@ -96,8 +97,11 @@ app/
 │   ├── discoverAction.ts      # Watchmode API orchestration 
 │   ├── searchAction.ts        # Legacy IMDb lookup
 │   ├── sentimentAction.ts     # Resilient AI fetch
-│   └── castAction.ts          
+│   ├── castAction.ts          
+│   └── wishlistAction.ts      # Redis wishlist operations
 ├── components/
+│   ├── layout/
+│   │   └── Navbar.tsx         # Global responsive navigation
 │   ├── MovieGrid.tsx          # Browse grid with skeletons
 │   ├── MovieCard.tsx          # Single poster UI
 │   ├── FilterBar.tsx          # URL-driven select dropdowns
@@ -108,11 +112,14 @@ app/
 ├── lib/                       # Thin API clients
 │   ├── watchmodeClient.ts
 │   ├── omdbClient.ts
-│   └── redis.ts               
+│   ├── redis.ts               
+│   ├── identity.ts            # Anonymous cookie logic
+│   └── wishlistStore.ts       # Upstash Redis wrapper
 ├── services/                  # Business logic
 │   └── sentimentService.ts    # 4-tier caching layer
 ├── types/                     # TypeScript definitions
 ├── movies/[id]/page.tsx       # Movie detail view
+├── wishlist/page.tsx          # My Wishlist view
 ├── page.tsx                   # Homepage / Browse View
 └── globals.css                # Glassmorphism design system
 ```
