@@ -63,13 +63,15 @@ A standout piece of the pre-existing backend architecture is the 3-Tier Multi-La
 - **URL-Driven State**: All browse state (`genre`, `sort`, `page`, `q`) is driven entirely by URL search parameters instead of React state. This fulfills the requirement to navigate between detail views and the grid without losing context, and allows users to bookmark specific queries.
 - **Server Actions over API Routes**: The application relies entirely on Next.js Server Actions (`app/actions/*.ts`) rather than traditional REST `app/api` routes. This removes the need for client-side data fetching libraries and significantly speeds up rendering.
 - **Debounced Autocomplete**: Search inputs are wrapped in a custom `useDebouncedValue` hook (~300ms) to prevent rate-limiting the Watchmode API while a user is actively typing.
+- **Anonymous Cookie Identity**: Instead of implementing full authentication (e.g., NextAuth/Auth.js) for the wishlist, the app uses a lazy-initialized UUID stored in an `httpOnly`, 1-year expiry cookie. This removes login friction, aligning with a public discovery tool, though it limits cross-device sync.
+- **Redis Sorted Sets for Wishlist**: The wishlist avoids relational databases in favor of Upstash Redis `ZSET` (for ordering) and `HASH` (for metadata payloads). This sidesteps the Vercel ephemeral-filesystem constraints (which breaks SQLite in production) and avoids the heavy provisioning overhead of a Postgres instance for a simple feature.
 
 ## Assumptions Made
 - Watchmode and OMDb are both reachable and reliable. If they degrade, the app attempts exponential backoffs. 
 - API quotas are sufficient for regular testing.
 
 ## Known Limitations
-- **Wishlist Deferred**: As per the assignment scope guidelines for this pass, the persistent wishlist feature (and its associated DB schema/storage) is intentionally deferred.
+- **Wishlist Sync**: Since the wishlist uses anonymous HTTP-only cookies, it cannot be synced across devices or browsers, and will be lost if the user clears their local cookies.
 - **Watchmode Images**: Watchmode's standard `list-titles` endpoint does not return poster URLs for free. We work around this by mapping the returned `imdb_id` back through our OMDb cache, but this creates a dependency chain.
 
 ## AI Tools Used
@@ -80,7 +82,7 @@ AI-assisted development tools (Cursor/Gemini) were used in this pass to:
 - The architectural strategy, the three-source API orchestration, and the decision to implement URL-driven state were human decisions.
 
 ## What I Would Improve With More Time
-- Implement a relational database (e.g., PostgreSQL + Prisma) to build out the deferred Wishlist functionality and store user sessions.
+- Implement full authentication (e.g., NextAuth) so wishlists can persist across devices.
 - Introduce infinite scroll via Intersection Observers rather than traditional pagination.
 - Pre-warm the cache for trending movies via a cron job to make the initial browse experience perfectly instant.
 
