@@ -59,25 +59,25 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
       <section className="movie-info-section">
         <div className="container">
           <BackButton />
-          <div className="movie-details">
-            <h1 className="movie-title-large">{movie.Title}</h1>
+          <div className="movie-header-wrapper">
+            <div className="movie-details">
+              <h1 className="movie-title-large">{movie.Title}</h1>
 
-            <div className="movie-meta-row">
-              <div className="movie-rating">
-                <span className="rating-stars-large">
-                  {renderStars(parseFloat(movie.imdbRating) || 0)}
+              <div className="movie-meta-row">
+                <div className="movie-rating">
+                  <span className="rating-stars-large">
+                    {renderStars(parseFloat(movie.imdbRating) || 0)}
+                  </span>
+                  <span className="rating-value-large">
+                    {movie.imdbRating}/10
+                  </span>
+                  <span className="rating-votes">({movie.imdbVotes} votes)</span>
+                </div>
+                <span className="movie-year-runtime">
+                  {movie.Year} • {movie.Runtime}
                 </span>
-                <span className="rating-value-large">
-                  {movie.imdbRating}/10
-                </span>
-                <span className="rating-votes">({movie.imdbVotes} votes)</span>
               </div>
-              <span className="movie-year-runtime">
-                {movie.Year} • {movie.Runtime}
-              </span>
             </div>
-          </div>
-          <div className="movie-info-header">
             <div className="movie-poster-large relative">
               <WishlistToggle 
                 movie={{
@@ -98,7 +98,7 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
                   src={movie.Poster} 
                   alt={movie.Title} 
                   fill
-                  sizes="(max-width: 900px) 100vw, 280px"
+                  sizes="(max-width: 900px) 120px, 280px"
                   className="object-cover"
                   priority
                 />

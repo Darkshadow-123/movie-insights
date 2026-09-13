@@ -141,6 +141,12 @@ h6 {
   width: 100%;
 }
 
+@media (max-width: 640px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
 .main {
   padding: 48px 0;
   min-height: calc(100vh - 100px);
@@ -467,6 +473,12 @@ main {
   }
 }
 
+@media (max-width: 400px) {
+  .movie-title-large {
+    font-size: 28px;
+  }
+}
+
 
 .trailer-container {
   border-radius: var(--radius-md);
@@ -630,6 +642,14 @@ main {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   margin: 32px 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.sub-navbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 .tab-button {
@@ -644,6 +664,14 @@ main {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+@media (max-width: 640px) {
+  .tab-button {
+    padding: 10px 16px;
+    font-size: 14px;
+    flex: 0 0 auto;
+  }
 }
 
 .tab-button:hover {
@@ -663,25 +691,76 @@ main {
   padding-bottom: 40px;
 }
 
-.movie-info-header {
+.movie-header-wrapper {
   display: grid;
   grid-template-columns: 280px 1fr;
+  grid-template-areas: 
+    "title title"
+    "poster trailer";
   gap: 40px;
   margin-bottom: 40px;
 }
 
-@media (max-width: 900px) {
-  .movie-info-header {
-    grid-template-columns: 1fr;
-  }
+.movie-details {
+  grid-area: title;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
 .movie-poster-large {
+  grid-area: poster;
   position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   aspect-ratio: 2 / 3;
+}
+
+.movie-trailer {
+  grid-area: trailer;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .movie-header-wrapper {
+    grid-template-columns: 120px minmax(0, 1fr);
+    grid-template-areas:
+      "trailer trailer"
+      "poster title";
+    gap: 16px;
+  }
+  .movie-details {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+  .movie-poster-large {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+  .movie-trailer {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+  .movie-title-large {
+    font-size: 24px !important;
+    margin-top: -4px !important;
+    margin-bottom: 8px !important;
+    line-height: 1.2 !important;
+  }
+  .movie-meta-row {
+    gap: 12px !important;
+    margin-bottom: 0 !important;
+  }
+  .movie-year-runtime {
+    font-size: 14px;
+  }
 }
 
 .movie-poster-large img {
@@ -691,20 +770,6 @@ main {
   display: block;
 }
 
-.movie-trailer {
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  height: 100%;
-  min-height: 0;
-}
-
-.movie-details {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
 .movie-title-large {
   font-family: var(--font-heading);
   font-size: 56px;
@@ -712,6 +777,8 @@ main {
   line-height: 1.1;
   margin-bottom: 16px;
   color: var(--shiny-cta-fg);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .movie-meta-row {
@@ -725,6 +792,7 @@ main {
 .movie-rating {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -969,13 +1037,14 @@ main {
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 24px;
+  gap: 16px;
   margin-top: 32px;
 }
 
 @media (min-width: 640px) {
   .movie-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
   }
 }
 
@@ -1062,6 +1131,7 @@ main {
   font-weight: 500;
 }
 
+
 .movie-card-meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -1116,6 +1186,23 @@ main {
 .filter-label {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .custom-select-container {
+    flex: 1;
+  }
+  .filter-select {
+    width: 100%;
+  }
 }
 
 .custom-select-container {
