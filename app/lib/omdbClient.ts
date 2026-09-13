@@ -69,7 +69,7 @@ export async function getMovieById(imdbId: string): Promise<OmdbApiResponse> {
 
     if (data.Response === 'False') {
       if (data.Error?.toLowerCase().includes('limit') || data.Error?.toLowerCase().includes('quota')) {
-        return createErrorResponse('quota_exceeded');
+        return createErrorResponse("This movie's details are temporarily unavailable due to API rate limits — please try again in a moment.");
       }
     }
 
@@ -110,9 +110,9 @@ export const getPosterUrl = unstable_cache(
   { revalidate: 3600 * 24 * 7, tags: ['poster'] } // 7 days
 );
 
-async function fetchMovieBasicDataInternal(imdbId: string): Promise<{ poster: string | null, rating: string | null, votes: string | null, runtime: string | null }> {
+async function fetchMovieBasicDataInternal(imdbId: string): Promise<{ poster: string | null, rating: string | null, votes: string | null, runtime: string | null, status: 'ok' | 'not_found' | 'quota_exceeded' }> {
   if (!config.omdb.apiKey || config.omdb.apiKey.trim() === '') {
-    return { poster: null, rating: null, votes: null, runtime: null };
+    return { poster: null, rating: null, votes: null, runtime: null, status: 'ok' };
   }
 
   const url = `${config.omdb.baseUrl}?i=${imdbId}&apikey=${config.omdb.apiKey}`;
@@ -126,7 +126,8 @@ async function fetchMovieBasicDataInternal(imdbId: string): Promise<{ poster: st
 
     const data = await response.json();
     if (data.Response === 'False') {
-      return { poster: null, rating: null, votes: null, runtime: null };
+      const isQuota = data.Error?.toLowerCase().includes('limit') || data.Error?.toLowerCase().includes('quota');
+      return { poster: null, rating: null, votes: null, runtime: null, status: isQuota ? 'quota_exceeded' : 'not_found' };
     }
 
     return {
@@ -134,9 +135,10 @@ async function fetchMovieBasicDataInternal(imdbId: string): Promise<{ poster: st
       rating: data.imdbRating !== 'N/A' && data.imdbRating ? data.imdbRating : null,
       votes: data.imdbVotes !== 'N/A' && data.imdbVotes ? data.imdbVotes : null,
       runtime: data.Runtime !== 'N/A' && data.Runtime ? data.Runtime : null,
+      status: 'ok'
     };
   } catch {
-    return { poster: null, rating: null, votes: null, runtime: null };
+    return { poster: null, rating: null, votes: null, runtime: null, status: 'not_found' };
   }
 }
 

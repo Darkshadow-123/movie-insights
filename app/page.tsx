@@ -4,6 +4,7 @@ import { MovieGrid } from "./components/movie/MovieGrid";
 import { MovieGridSkeleton } from "./components/movie/MovieGridSkeleton";
 import { FilterBar } from "./components/home/FilterBar";
 import { Pagination } from "./components/common/Pagination";
+import { QuotaWarning } from "./components/common/QuotaWarning";
 import { browseMovies, searchMoviesByTitle, getGenreList } from "./actions/discoverAction";
 
 type PageProps = {
@@ -57,12 +58,14 @@ async function MovieContent({ query, genre, genreName, sortBy, page }: any) {
   let status = '';
   let errorMessage = '';
   let totalPages = 1;
+  let partialDataWarning = false;
 
   if (query) {
     const searchRes = await searchMoviesByTitle(query, sortBy);
     status = searchRes.status;
     movies = searchRes.data || [];
     errorMessage = searchRes.message || '';
+    partialDataWarning = searchRes.partialDataWarning || false;
   } else {
     const browseRes = await browseMovies({
       genres: genre || undefined,
@@ -74,6 +77,7 @@ async function MovieContent({ query, genre, genreName, sortBy, page }: any) {
     movies = browseRes.data || [];
     totalPages = browseRes.totalPages || 1;
     errorMessage = browseRes.message || '';
+    partialDataWarning = browseRes.partialDataWarning || false;
   }
 
   return (
@@ -108,6 +112,7 @@ async function MovieContent({ query, genre, genreName, sortBy, page }: any) {
             </div>
           )}
 
+          <QuotaWarning show={partialDataWarning} />
           <MovieGrid movies={movies} />
           {!query && totalPages > 1 && (
             <Pagination currentPage={page} totalPages={totalPages} />

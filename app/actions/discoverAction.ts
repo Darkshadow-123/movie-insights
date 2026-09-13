@@ -20,6 +20,7 @@ export interface DiscoverResult<T> {
   message?: string;
   page?: number;
   totalPages?: number;
+  partialDataWarning?: boolean;
 }
 
 const handleWatchmodeError = (err: unknown): DiscoverResult<any> => {
@@ -54,6 +55,7 @@ export async function browseMovies(filters: {
         type: t.type,
       }));
     
+    let quotaExceededCount = 0;
     // Fetch posters in parallel using the cached omdb client
     const withPosters = await Promise.all(
       summaries.map(async (movie) => {
@@ -63,6 +65,9 @@ export async function browseMovies(filters: {
           movie.rating = basicData.rating || undefined;
           movie.votes = basicData.votes || undefined;
           movie.runtime = basicData.runtime || undefined;
+          if (basicData.status === 'quota_exceeded') {
+            quotaExceededCount++;
+          }
         }
         return movie;
       })
@@ -72,7 +77,8 @@ export async function browseMovies(filters: {
       data: withPosters,
       status: 'success',
       page: res.page,
-      totalPages: res.total_pages
+      totalPages: res.total_pages,
+      partialDataWarning: quotaExceededCount > 0
     };
   } catch (err) {
     return handleWatchmodeError(err);
@@ -95,6 +101,7 @@ export async function searchMoviesByTitle(query: string, sortBy: string = 'popul
         poster: t.image_url || null, // Search sometimes returns image_url
       }));
     
+    let quotaExceededCount = 0;
     // Fetch details for those that don't have them, and get imdbVotes for sorting
     const enriched = await Promise.all(
       summaries.map(async (movie) => {
@@ -107,6 +114,9 @@ export async function searchMoviesByTitle(query: string, sortBy: string = 'popul
           movie.votes = basicData.votes || undefined;
           movie.runtime = basicData.runtime || undefined;
           (movie as any)._votes = parseInt((basicData.votes || '0').replace(/,/g, ''), 10) || 0;
+          if (basicData.status === 'quota_exceeded') {
+            quotaExceededCount++;
+          }
         }
         return movie;
       })
@@ -126,7 +136,8 @@ export async function searchMoviesByTitle(query: string, sortBy: string = 'popul
     
     return {
       data: enriched,
-      status: 'success'
+      status: 'success',
+      partialDataWarning: quotaExceededCount > 0
     };
   } catch (err) {
     return handleWatchmodeError(err);
