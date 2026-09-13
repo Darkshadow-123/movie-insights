@@ -20,6 +20,10 @@ export const config = {
     apiKey: process.env.GEMINI_API_KEY || '',
     model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
   },
+  watchmode: {
+    apiKey: process.env.WATCHMODE_API_KEY || '',
+    baseUrl: 'https://api.watchmode.com',
+  },
 } as const;
 
 export const apiKeys = {
@@ -27,4 +31,5 @@ export const apiKeys = {
   youtube: process.env.YOUTUBE_API_KEY,
   gemini: process.env.GEMINI_API_KEY,
   rapidApi: process.env.RAPIDAPI_KEY,
+  watchmode: process.env.WATCHMODE_API_KEY,
 };

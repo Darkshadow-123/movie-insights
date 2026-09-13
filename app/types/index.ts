@@ -236,3 +236,73 @@ export interface RapidApiResponse {
     title?: RapidApiTitle;
   };
 }
+
+// Watchmode & Movie Discovery Types
+export interface MovieSummary {
+  imdbId: string;
+  watchmodeId: number;
+  title: string;
+  year: number;
+  type: string;
+  poster?: string | null;
+  rating?: string;
+  votes?: string;
+  runtime?: string;
+  genre?: string;
+}
+
+export interface WatchmodeListTitle {
+  id: number;
+  title: string;
+  year: number;
+  imdb_id: string;
+  tmdb_id: number;
+  tmdb_type: string;
+  type: string;
+}
+
+export interface WatchmodeSearchResult {
+  id: number;
+  name: string;
+  type: string;
+  year: number;
+  imdb_id: string;
+  tmdb_id: number;
+  tmdb_type: string;
+  image_url?: string;
+}
+
+export interface WatchmodeAutocompleteResult {
+  id: number;
+  name: string;
+  type: string;
+  year: number;
+  imdb_id: string;
+  tmdb_id: number;
+  tmdb_type: string;
+  image_url?: string;
+}
+
+export interface Genre {
+  id: number;
+  name: string;
+  tmdb_id?: number;
+}
+
+export interface ListTitlesResponse {
+  titles: WatchmodeListTitle[];
+  page: number;
+  total_pages: number;
+  total_results: number;
+}
+
+export interface SearchResponse {
+  title_results: WatchmodeSearchResult[];
+}
+
+export interface AutocompleteResponse {
+  results: WatchmodeAutocompleteResult[];
+}
+
+export type WatchmodeStatus = 'success' | 'no_api_key' | 'quota_exceeded' | 'error';
+
