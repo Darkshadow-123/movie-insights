@@ -27,11 +27,12 @@ We use a lightweight, NoSQL approach in Upstash Redis for persistent wishlists, 
 - `user:{anonId}:wishlist` (**ZSET**): Stores the chronological ordering of saved movies. The score is the Unix timestamp, and the member is the `imdbId`.
 - `movie:{imdbId}` (**HASH**): Stores the denormalized movie metadata payload (title, poster, year, rating). This serves as a global cache shared across all users to minimize external API roundtrips.
 
-### Three-Source Data Architecture
-This application abstracts movie data through a bespoke backend orchestration layer integrating three independent external services:
+### Four-Source Data Architecture
+This application abstracts movie data through a bespoke backend orchestration layer integrating four independent external services:
 1. **Watchmode API (Discovery)**: Used strictly for list/browse, genre data, and search. It's cost-effective for querying but charges extra for IMDb lookups, so it serves purely as our "discovery engine."
 2. **OMDb API (Details & Posters)**: Used for retrieving high-quality movie posters and the comprehensive detail data (plot, actors, runtime). Watchmode IDs are mapped to IMDb IDs, which are passed to OMDb.
-3. **Google Gemini (Sentiment Analysis)**: Used to analyze YouTube trailer comments and compute an aggregate audience sentiment score, supplementing the traditional 1-10 IMDb rating.
+3. **YouTube Data API (Media & Comments)**: Fetches official movie trailers and extracts top-relevance audience comments to be fed into the sentiment analysis pipeline.
+4. **Google Gemini (Sentiment Analysis)**: Analyzes the YouTube trailer comments and computes an aggregate audience sentiment score, supplementing the traditional 1-10 IMDb rating.
 
 ## Advanced Caching & Resiliency (`sentimentService.ts`)
 
