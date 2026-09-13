@@ -13,8 +13,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        
-        <main style={{ minHeight: '100vh' }}>
+
+        <main style={{ minHeight: '100vh', padding: "26px" }}>
           {children}
         </main>
         <footer className="footer">
