@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getOrCreateAnonId } from '../lib/identity';
+import { getOrCreateAnonId, getAnonId } from '../lib/identity';
 import { addToWishlist, removeFromWishlist, getWishlistWithMeta } from '../lib/wishlistStore';
 import { getMovieBasicData } from '../lib/omdbClient';
 import { MovieSummary } from '../types';
@@ -25,7 +25,10 @@ export async function getWishlistMovies(): Promise<{
   partialDataWarning?: boolean;
 }> {
   try {
-    const anonId = await getOrCreateAnonId();
+    const anonId = await getAnonId();
+    if (!anonId) {
+      return { data: [], status: 'success' };
+    }
     const wishlistMeta = await getWishlistWithMeta(anonId);
     
     if (wishlistMeta.length === 0) {
