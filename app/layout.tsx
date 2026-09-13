@@ -5,6 +5,8 @@ export const metadata: Metadata = {
   description: 'Enter a movie title to get detailed insights, cast info, and AI-powered sentiment analysis',
 };
 
+import { Navbar } from './components/layout/Navbar';
+
 export default function RootLayout({
   children,
 }: {
@@ -13,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-
+        <Navbar />
         <main style={{ minHeight: '100vh', padding: "26px" }}>
           {children}
         </main>
