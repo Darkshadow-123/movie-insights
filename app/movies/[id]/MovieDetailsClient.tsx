@@ -1,16 +1,17 @@
 "use client";  
    
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MovieData, CastData, YouTubeStatus, FilteredComment, TrailerComments as TrailerCommentsType } from "@/app/types";  
 import { Tabs, TrailerPlayer, YouTubeStatusBanner, TrailerComments } from "@/app/components";  
-import { Navbar } from "@/app/components/layout";
+import { BackButton } from "@/app/components/common/BackButton";
 import { CastTabContent } from './CastTabContent';
+import { WishlistToggle } from '@/app/components/common/WishlistToggle';
 
 interface MovieDetailsClientProps {
   movie: MovieData;
   imdbId: string;
+  isSaved?: boolean;
   trailerId: string | null;
   youtubeStatus?: YouTubeStatus;
   youtubeMessage?: string;
@@ -25,6 +26,7 @@ interface MovieDetailsClientProps {
 export function MovieDetailsClient({
   movie,
   imdbId,
+  isSaved = false,
   trailerId,
   youtubeStatus,
   youtubeMessage,
@@ -36,8 +38,6 @@ export function MovieDetailsClient({
   // and back doesn't trigger a refetch — see the comment in
   // CastTabContent.tsx for why that lift is necessary.
   const [castData, setCastData] = useState<CastData | null>(null);
-  const router = useRouter();
-
   const renderStars = (rating: number) => {  
     const full = Math.floor(rating / 2);  
     const half = rating % 2 >= 1;  
@@ -56,30 +56,9 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
 
   return (
     <>
-      <Navbar />
-
       <section className="movie-info-section">
         <div className="container">
-          <button 
-            onClick={() => router.back()} 
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              padding: '0 0 24px 0',
-              transition: 'color 0.2s ease'
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-            onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-          >
-            ← Back
-          </button>
+          <BackButton />
           <div className="movie-details">
             <h1 className="movie-title-large">{movie.Title}</h1>
 
@@ -99,14 +78,28 @@ const genres = movie.Genre ? movie.Genre.split(", ").slice(0, 4) : [];
             </div>
           </div>
           <div className="movie-info-header">
-            <div className="movie-poster-large">
+            <div className="movie-poster-large relative">
+              <WishlistToggle 
+                movie={{
+                  imdbId: imdbId,
+                  watchmodeId: 0,
+                  title: movie.Title || '',
+                  year: movie.Year || '',
+                  type: 'movie',
+                  poster: movie.Poster !== "N/A" ? movie.Poster : undefined,
+                  rating: movie.imdbRating,
+                  votes: movie.imdbVotes,
+                  runtime: movie.Runtime
+                }}
+                isSaved={isSaved}
+              />
               {movie.Poster && movie.Poster !== "N/A" && movie.Poster.startsWith("http") ? (
                 <Image 
                   src={movie.Poster} 
                   alt={movie.Title} 
                   fill
                   sizes="(max-width: 900px) 100vw, 280px"
-                  style={{ objectFit: 'cover' }}
+                  className="object-cover"
                   priority
                 />
               ) : (
