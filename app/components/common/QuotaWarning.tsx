@@ -12,7 +12,10 @@ export function QuotaWarning({ show }: QuotaWarningProps) {
   if (!show || dismissed) return null;
 
   return (
-    <div style={{
+    <div 
+      role="status"
+      aria-live="polite"
+      style={{
       background: 'rgba(255, 165, 0, 0.1)',
       border: '1px solid rgba(255, 165, 0, 0.3)',
       color: 'var(--text-primary)',

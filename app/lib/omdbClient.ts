@@ -120,7 +120,9 @@ async function fetchMovieBasicDataInternal(imdbId: string): Promise<{ poster: st
   try {
     const response = await fetchWithRetryAndTimeout(url, { next: { revalidate: 3600 * 24 * 7 } });
     if (!response.ok) {
-      return { poster: null, rating: null, votes: null, runtime: null };
+      // If OMDb returns a 429 Too Many Requests, count it as quota exceeded
+      const isRateLimit = response.status === 429;
+      return { poster: null, rating: null, votes: null, runtime: null, status: isRateLimit ? 'quota_exceeded' : 'not_found' };
     }
 
 
