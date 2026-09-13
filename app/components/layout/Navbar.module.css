@@ -129,6 +129,15 @@
   }
 
   .searchForm {
-    max-width: 200px;
+    display: none;
+  }
+
+  .searchBtn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .container {
+    padding: 0 16px;
   }
 }
