@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { MovieSummary } from '@/app/types';
+import { ImageWithFallback } from '../common/ImageWithFallback';
 
 interface MovieCardProps {
   movie: MovieSummary;
@@ -25,13 +26,16 @@ export function MovieCard({ movie }: MovieCardProps) {
   return (
     <Link href={detailUrl} className="movie-card glass-card">
       <div className="movie-card-poster">
-        {movie.poster && movie.poster !== 'N/A' ? (
-          <img src={movie.poster} alt={`${movie.title} poster`} loading="lazy" />
-        ) : (
-          <div className="poster-placeholder">
-            🎬
-          </div>
-        )}
+        <ImageWithFallback 
+          src={movie.poster || ''} 
+          alt={`${movie.title} poster`} 
+          loading="lazy" 
+          fallback={
+            <div className="poster-placeholder">
+              🎬
+            </div>
+          }
+        />
       </div>
       <div className="movie-card-info" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
         <div className="movie-card-header">

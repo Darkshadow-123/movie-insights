@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getAutocompleteSuggestions } from '@/app/actions/discoverAction';
 import { useDebouncedValue } from '@/app/hooks/useDebouncedValue';
 import { MovieSummary } from '@/app/types';
+import { ImageWithFallback } from '../common/ImageWithFallback';
 
 export function SearchForm() {
   const [query, setQuery] = useState('');
@@ -13,9 +14,19 @@ export function SearchForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const debouncedQuery = useDebouncedValue(query, 600);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q !== null) {
+      setQuery(q);
+    } else {
+      setQuery('');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Click outside to close dropdown
@@ -75,7 +86,10 @@ export function SearchForm() {
     e.preventDefault();
     if (query.trim()) {
       setIsFocused(false);
-      router.push(`/?q=${encodeURIComponent(query.trim())}`);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('q', query.trim());
+      params.delete('page'); // Reset pagination
+      router.push(`/?${params.toString()}`);
     }
   };
 
@@ -124,13 +138,16 @@ export function SearchForm() {
                   onClick={() => handleSuggestionClick(movie)}
                 >
                   <div className="autocomplete-poster">
-                    {movie.poster && movie.poster !== 'N/A' ? (
-                      <img src={movie.poster} alt={movie.title} loading="lazy" />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                        🎬
-                      </div>
-                    )}
+                    <ImageWithFallback 
+                      src={movie.poster || ''} 
+                      alt={movie.title} 
+                      loading="lazy" 
+                      fallback={
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                          🎬
+                        </div>
+                      }
+                    />
                   </div>
                   <div className="autocomplete-info">
                     <span className="autocomplete-title">{movie.title}</span>
