@@ -1,12 +1,20 @@
+"use client";
+
 import Link from 'next/link';
 import { MovieSummary } from '@/app/types';
 import { ImageWithFallback } from '../common/ImageWithFallback';
+import { WishlistToggle } from '../common/WishlistToggle';
+import { useState } from 'react';
 
 interface MovieCardProps {
   movie: MovieSummary;
+  isSaved?: boolean;
+  removeOnToggle?: boolean;
 }
 
-export function MovieCard({ movie }: MovieCardProps) {
+export function MovieCard({ movie, isSaved = false, removeOnToggle = false }: MovieCardProps) {
+  const [hidden, setHidden] = useState(false);
+
   // We use IMDb ID for routing as detailed in the prompt
   const detailUrl = `/movies/${movie.imdbId}`;
 
@@ -23,8 +31,19 @@ export function MovieCard({ movie }: MovieCardProps) {
     );  
   };
 
+  if (hidden) {
+    return null;
+  }
+
   return (
-    <Link href={detailUrl} className="movie-card glass-card">
+    <Link href={detailUrl} className="movie-card glass-card" style={{ position: 'relative' }}>
+      <WishlistToggle 
+        movie={movie} 
+        isSaved={isSaved} 
+        removeOnToggle={removeOnToggle}
+        onHidden={() => setHidden(true)}
+      />
+
       <div className="movie-card-poster">
         <ImageWithFallback 
           src={movie.poster || ''} 
