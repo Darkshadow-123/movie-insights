@@ -22,6 +22,11 @@ A Next.js full-stack web application that allows users to discover movies, brows
 - **State Management**: URL Search Parameters (for shareable, stateful URLs)
 - **APIs & Caching**: Upstash Redis (caching and distributed locks), Next.js `unstable_cache`
 
+### Database Schema (Redis)
+We use a lightweight, NoSQL approach in Upstash Redis for persistent wishlists, avoiding the cold-start overhead of relational databases:
+- `user:{anonId}:wishlist` (**ZSET**): Stores the chronological ordering of saved movies. The score is the Unix timestamp, and the member is the `imdbId`.
+- `movie:{imdbId}` (**HASH**): Stores the denormalized movie metadata payload (title, poster, year, rating). This serves as a global cache shared across all users to minimize external API roundtrips.
+
 ### Three-Source Data Architecture
 This application abstracts movie data through a bespoke backend orchestration layer integrating three independent external services:
 1. **Watchmode API (Discovery)**: Used strictly for list/browse, genre data, and search. It's cost-effective for querying but charges extra for IMDb lookups, so it serves purely as our "discovery engine."
@@ -58,6 +63,14 @@ A standout piece of the pre-existing backend architecture is the 3-Tier Multi-La
    npm run dev
    ```
 5. Open [http://localhost:3000](http://localhost:3000)
+
+## Approach Taken
+
+The core philosophy behind this implementation was to build a robust **Backend-for-Frontend (BFF)** abstraction layer using Next.js Server Actions. Rather than having the client talk directly to external APIs (Watchmode, OMDb, Gemini), the server orchestrates these calls, handles API quotas, implements resilient fallback mechanisms (like exponential backoffs), and merges disparate data sources into clean TypeScript models.
+
+I focused heavily on **URL-Driven State** for the discovery experience. By pushing all search, filter, and pagination state into URL query parameters, the application natively supports deep-linking, back-button navigation without losing context, and server-side rendering for instant page loads.
+
+For the **Wishlist**, rather than introducing the friction of a full authentication flow or relying on ephemeral `localStorage` (which fails during Server-Side Rendering), I implemented a lazy-initialized anonymous identity system stored in secure `httpOnly` cookies. This identity keys into a persistent Upstash Redis datastore, ensuring wishlists survive browser restarts and are fully available during the initial server paint.
 
 ## Important Technical Decisions
 
