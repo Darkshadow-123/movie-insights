@@ -6,6 +6,8 @@ import { FilterBar } from "./components/home/FilterBar";
 import { Pagination } from "./components/common/Pagination";
 import { QuotaWarning } from "./components/common/QuotaWarning";
 import { browseMovies, searchMoviesByTitle, getGenreList } from "./actions/discoverAction";
+import { getAnonId } from "./lib/identity";
+import { getWishlistIds } from "./lib/wishlistStore";
 
 type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -59,6 +61,13 @@ async function MovieContent({ query, genre, genreName, sortBy, page }: any) {
   let errorMessage = '';
   let totalPages = 1;
   let partialDataWarning = false;
+  let savedMovieIds = new Set<string>();
+
+  const anonId = await getAnonId();
+  if (anonId) {
+    const ids = await getWishlistIds(anonId);
+    savedMovieIds = new Set(ids);
+  }
 
   if (query) {
     const searchRes = await searchMoviesByTitle(query, sortBy);
@@ -113,7 +122,7 @@ async function MovieContent({ query, genre, genreName, sortBy, page }: any) {
           )}
 
           <QuotaWarning show={partialDataWarning} />
-          <MovieGrid movies={movies} />
+          <MovieGrid movies={movies} savedMovieIds={savedMovieIds} />
           {!query && totalPages > 1 && (
             <Pagination currentPage={page} totalPages={totalPages} />
           )}

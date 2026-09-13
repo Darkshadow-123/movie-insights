@@ -242,7 +242,7 @@ export interface MovieSummary {
   imdbId: string;
   watchmodeId: number;
   title: string;
-  year: number;
+  year: number | string | null;
   type: string;
   poster?: string | null;
   rating?: string;

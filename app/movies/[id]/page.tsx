@@ -1,6 +1,8 @@
 import { getMovieById, getTrailerWithComments } from '@/app/lib';
 import { MovieDetailsClient } from './MovieDetailsClient';
 import { SentimentCardClient } from './SentimentCardClient';
+import { getAnonId } from '@/app/lib/identity';
+import { isInWishlist } from '@/app/lib/wishlistStore';
 
 export default async function MoviePage({
   params,
@@ -28,8 +30,12 @@ export default async function MoviePage({
   const trailerComments =
     youtubeResult.comments.comments.length > 0 ? youtubeResult.comments : null;
 
+  const anonId = await getAnonId();
+  const isSaved = anonId ? await isInWishlist(anonId, imdbId) : false;
+
   return (
     <MovieDetailsClient
+      isSaved={isSaved}
       movie={movieData}
       imdbId={imdbId}
       trailerId={youtubeResult.trailerId}

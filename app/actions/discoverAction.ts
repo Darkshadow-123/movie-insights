@@ -124,9 +124,9 @@ export async function searchMoviesByTitle(query: string, sortBy: string = 'popul
     
     // Sort logic
     if (sortBy === 'release_date_desc') {
-      enriched.sort((a, b) => (b.year || 0) - (a.year || 0));
+      enriched.sort((a, b) => (parseInt(b.year as any) || 0) - (parseInt(a.year as any) || 0));
     } else if (sortBy === 'release_date_asc') {
-      enriched.sort((a, b) => (a.year || 9999) - (b.year || 9999));
+      enriched.sort((a, b) => (parseInt(a.year as any) || 9999) - (parseInt(b.year as any) || 9999));
     } else if (sortBy === 'popularity_asc') {
       enriched.sort((a, b) => ((a as any)._votes || 0) - ((b as any)._votes || 0));
     } else {
