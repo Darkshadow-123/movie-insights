@@ -69,8 +69,7 @@ export async function getMovieById(imdbId: string): Promise<OmdbApiResponse> {
 
     if (data.Response === 'False') {
       if (data.Error?.toLowerCase().includes('limit') || data.Error?.toLowerCase().includes('quota')) {
-        // We could throw a specific quota exceeded error here if we had an OmdbStatus
-        // For now, keep returning it as an error response to match existing expectations
+        return createErrorResponse('quota_exceeded');
       }
     }
 

@@ -42,15 +42,17 @@ export async function browseMovies(filters: {
   try {
     const res = await listTitles(filters);
     
-    // Safely map to MovieSummary
+    // Safely map to MovieSummary, filtering out titles without an IMDb ID
     const titles = res.titles || [];
-    const summaries: MovieSummary[] = titles.map(t => ({
-      imdbId: t.imdb_id,
-      watchmodeId: t.id,
-      title: t.title,
-      year: t.year,
-      type: t.type,
-    }));
+    const summaries: MovieSummary[] = titles
+      .filter((t: any) => t.imdb_id && t.imdb_id.trim() !== '')
+      .map((t: any) => ({
+        imdbId: t.imdb_id,
+        watchmodeId: t.id,
+        title: t.title,
+        year: t.year,
+        type: t.type,
+      }));
     
     // Fetch posters in parallel using the cached omdb client
     const withPosters = await Promise.all(
@@ -82,14 +84,16 @@ export async function searchMoviesByTitle(query: string, sortBy: string = 'popul
     const res = await searchTitles(query);
     
     const results = res.title_results || [];
-    const summaries: MovieSummary[] = results.map(t => ({
-      imdbId: t.imdb_id,
-      watchmodeId: t.id,
-      title: t.name,
-      year: t.year,
-      type: t.type,
-      poster: t.image_url || null, // Search sometimes returns image_url
-    }));
+    const summaries: MovieSummary[] = results
+      .filter((t: any) => t.imdb_id && t.imdb_id.trim() !== '')
+      .map((t: any) => ({
+        imdbId: t.imdb_id,
+        watchmodeId: t.id,
+        title: t.name,
+        year: t.year,
+        type: t.type,
+        poster: t.image_url || null, // Search sometimes returns image_url
+      }));
     
     // Fetch details for those that don't have them, and get imdbVotes for sorting
     const enriched = await Promise.all(
@@ -134,14 +138,16 @@ export async function getAutocompleteSuggestions(query: string): Promise<Discove
     const res = await autocompleteSearch(query);
     
     const results = res.results || [];
-    const summaries: MovieSummary[] = results.map(t => ({
-      imdbId: t.imdb_id,
-      watchmodeId: t.id,
-      title: t.name,
-      year: t.year,
-      type: t.type,
-      poster: t.image_url || null, // Autocomplete typically returns image_url
-    }));
+    const summaries: MovieSummary[] = results
+      .filter((t: any) => t.imdb_id && t.imdb_id.trim() !== '')
+      .map((t: any) => ({
+        imdbId: t.imdb_id,
+        watchmodeId: t.id,
+        title: t.name,
+        year: t.year,
+        type: t.type,
+        poster: t.image_url || null, // Autocomplete typically returns image_url
+      }));
     
     return {
       data: summaries,
