@@ -81,24 +81,24 @@ For the **Wishlist**, rather than introducing the friction of a full authenticat
 - **Redis Sorted Sets for Wishlist**: The wishlist avoids relational databases in favor of Upstash Redis `ZSET` (for ordering) and `HASH` (for metadata payloads). This sidesteps the Vercel ephemeral-filesystem constraints (which breaks SQLite in production) and avoids the heavy provisioning overhead of a Postgres instance for a simple feature.
 
 ## Assumptions Made
-- Watchmode and OMDb are both reachable and reliable. If they degrade, the app attempts exponential backoffs. 
-- API quotas are sufficient for regular testing.
+- **API Availability**: Assumes Watchmode and OMDb are reachable. If they degrade, the application attempts exponential backoffs to recover gracefully.
+- **Client Capabilities**: Assumes the user's browser accepts standard HTTP cookies, which is required for anonymous wishlist identity.
+- **API Quotas**: Assumes free-tier API quotas are sufficient for evaluation and testing.
 
 ## Known Limitations
-- **Wishlist Sync**: Since the wishlist uses anonymous HTTP-only cookies, it cannot be synced across devices or browsers, and will be lost if the user clears their local cookies.
-- **Watchmode Images**: Watchmode's standard `list-titles` endpoint does not return poster URLs for free. We work around this by mapping the returned `imdb_id` back through our OMDb cache, but this creates a dependency chain.
+- **Wishlist Sync**: Because the wishlist relies on anonymous `httpOnly` cookies, it cannot be synced across different devices or browsers, and will be lost if the user completely clears their browser data.
+- **Watchmode Images**: Watchmode's standard `list-titles` endpoint does not return poster URLs on the free tier. I worked around this by mapping the returned `imdb_id` back through the OMDb API, which creates a slight dependency chain but avoids missing images.
 
 ## AI Tools Used
-AI-assisted development tools (Cursor/Gemini) were used in this pass to:
-- Quickly scaffold React boilerplate for new components like `MovieGrid`, `MovieCard`, and `FilterBar`.
-- Generate the exponential backoff logic for hardening the OMDb client.
-- Map the Watchmode response types into internal TypeScript definitions.
-- The architectural strategy, the three-source API orchestration, and the decision to implement URL-driven state were human decisions.
+Used AI (Cursor/Gemini) to understand the third-party API documentation (Watchmode/Upstash), generate initial React component boilerplate, and troubleshoot hydration/hydration-mismatch errors during layout adjustments. 
+
+The API architecture, three-source orchestration strategy, database structure (Redis), caching implementations, and overall application behavior were based on my own product and technical decisions.
 
 ## What I Would Improve With More Time
-- Implement full authentication (e.g., NextAuth) so wishlists can persist across devices.
-- Introduce infinite scroll via Intersection Observers rather than traditional pagination.
-- Pre-warm the cache for trending movies via a cron job to make the initial browse experience perfectly instant.
+- **Full Authentication**: Implement full OAuth (e.g., NextAuth/Auth.js) so users can explicitly log in and sync their wishlists across multiple devices.
+- **Infinite Scroll**: Introduce infinite scroll via Intersection Observers rather than traditional click-based pagination for a more modern mobile browsing experience.
+- **Cache Pre-Warming**: Pre-warm the Next.js Data Cache for the top 100 trending movies via a cron job to make the initial browse experience instantly fast for the majority of traffic.
+- **E2E Testing**: Add Cypress or Playwright integration tests covering the critical user flow of discovering a movie, clicking into details, and saving it to the wishlist.
 
 ---
 
